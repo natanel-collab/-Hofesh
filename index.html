@@ -1273,7 +1273,14 @@ function te(e,id){
   if(dx>55&&dy<35){w.classList.add('sw');w.querySelector('.tx').style.transform='translateX(-72px)';}
   else rw(w);
 }
-function rw(w){w.classList.remove('sw');const t=w.querySelector('.tx');if(t)t.style.transform='';}
+function toggleTxActions(id){
+  const w=C('txw-'+id);
+  if(!w)return;
+  const isOpen=w.classList.contains('sw');
+  document.querySelectorAll('.txw.sw').forEach(x=>x.classList.remove('sw'));
+  if(!isOpen)w.classList.add('sw');
+}
+function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
   const w=C('txw-'+id);
@@ -1713,6 +1720,16 @@ async function initApp(){
     C('auth-err').textContent='שגיאת חיבור — בדוק אינטרנט';
   }
 }
+
+// Fix safe area for iPhone notch in standalone PWA mode
+(function(){
+  // Add extra top padding when running as installed PWA
+  const isStandalone = window.navigator.standalone || 
+    window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone){
+    document.documentElement.style.setProperty('--top-inset','env(safe-area-inset-top,44px)');
+  }
+})();
 
 // Apply saved theme
 (function(){
