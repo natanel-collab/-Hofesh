@@ -254,7 +254,8 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   justify-content:flex-start;padding-right:1rem;font-size:1.1rem;border-radius:var(--rs);
   opacity:0;transition:opacity .15s}
 .txw.sw .txw-bg{opacity:1}
-.txw.sw .tx-action-bar{display:flex!important}
+.tx-action-bar{display:none}
+.txw.sw .tx-action-bar{display:flex}
 .txw.sw .tx{border-radius:var(--rs) var(--rs) 0 0;border-bottom:none}
 .tx{display:flex;align-items:center;gap:.65rem;background:var(--bg2);border:.5px solid var(--b1);
   border-radius:var(--rs);padding:.75rem .85rem;position:relative;z-index:1;
@@ -1301,7 +1302,7 @@ function mkTx(t,i){
       <div class="tx-amt" style="color:${col}">${sign}₪${fmt(t.amount)}</div>
       <span style="font-size:.65rem;color:var(--txt3);flex-shrink:0">···</span>
     </div>
-    <div class="tx-action-bar" style="display:none;padding:.4rem .85rem;gap:.5rem;background:var(--bg3);border:.5px solid var(--b1);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
+    <div class="tx-action-bar" style="padding:.4rem .85rem;gap:.5rem;background:var(--bg3);border:.5px solid var(--b1);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
       <button onclick="openEdit(${t.id});C('txw-${t.id}').classList.remove('sw')"
         style="flex:1;padding:.45rem;border-radius:8px;background:var(--blu-d);border:.5px solid var(--blu-b);color:var(--blu);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">✎ עריכה</button>
       <button onclick="delTx(${t.id})"
