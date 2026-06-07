@@ -1661,8 +1661,10 @@ async function loadUserData(){
       }
     }catch(e){console.log('Supabase rate error:',e);}
     
-    // Fallback: try external APIs
+    // Fallback: try external APIs (Bank of Israel first - official & free)
     const externalApis=[
+      {url:'https://edge.boi.gov.il/FusionEdgeServer/sdmx/v2/data/dataflow/BOI.STATISTICS/EXR/1.0/RER_USD_ILS?lastNObservations=1&format=json',
+       parse:d=>{try{const obs=d?.data?.dataSets?.[0]?.series?.['0:0:0:0']?.observations;return obs?Object.values(obs)[0][0]:null;}catch(e){return null;}}},
       {url:'https://api.exchangerate-api.com/v4/latest/USD',parse:d=>d?.rates?.ILS},
       {url:'https://open.er-api.com/v6/latest/USD',parse:d=>d?.rates?.ILS},
     ];
