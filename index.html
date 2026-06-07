@@ -334,10 +334,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 <body>
 
 <!-- LOADING -->
-<div id="loading"><div class="spinner"></div></div>
+<div id="loading" class="hide"><div class="spinner"></div></div>
 
 <!-- AUTH SCREEN -->
-<div id="auth-wrap">
+<div id="auth-wrap" style="opacity:1;pointer-events:all">
   <div class="auth-logo">החופש <span>לבחור</span></div>
   <div class="auth-sub">ניהול כלכלי משפחתי חכם</div>
   <div class="auth-card">
@@ -1559,9 +1559,7 @@ C('scroll').addEventListener('touchend',e=>{
 },{passive:true});
 
 // ════ INIT ════
-// Show auth screen immediately, check session in background
-showLoading(false);
-C('auth-wrap').classList.remove('hide');
+// Auth screen visible by default, check session in background
 
 (async()=>{
   try{
