@@ -1906,10 +1906,13 @@ async function addTx(){
     date:new Date(date+'T12:00:00').toISOString()
   };
   C('a-sub').textContent='שומר...';
-  const {data:newTx,error}=await sb.from('transactions').insert(row).select().single();
+  const {data:_d,error}=await sb.from('transactions').insert(row).select().single();
   if(error){toast('שגיאה: '+error.message);setAT(aType);return;}
-  // Add to local array immediately - no need to wait for realtime
-  txs.unshift({...newTx,amount:parseFloat(newTx.amount)});
+  // Handle both array and single object response
+  const newTx=Array.isArray(_d)?_d[0]:_d;
+  // Fallback: if data is missing/malformed, use the row we sent + a temp id
+  const txToAdd=newTx&&newTx.id ? {...newTx,amount:parseFloat(newTx.amount||amt)} : {...row,id:Date.now(),amount:amt};
+  txs.unshift(txToAdd);
   closeAdd();
   render();
   toast(aType==='expense'?`הוצאה ₪${fmt(amt)} ✓`:aType==='income'?`הכנסה ₪${fmt(amt)} ✓`:`השקעה ₪${fmt(amt)} ✓`);
