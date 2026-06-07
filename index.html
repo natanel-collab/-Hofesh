@@ -1683,6 +1683,7 @@ async function loadUserData(){
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
+  ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cat','ov-profile'].forEach(initSheetSwipe);
   // Init swipe-down for all sheets
   ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cash','ov-profile','ov-cat'].forEach(initSheetSwipe);
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
@@ -2426,6 +2427,38 @@ function initSwipe(){
     const cur=tabs.findIndex(t=>C('v-'+t).classList.contains('on'));
     if(dx>0&&cur<tabs.length-1)goTab(tabs[cur+1]);
     else if(dx<0&&cur>0)goTab(tabs[cur-1]);
+  },{passive:true});
+}
+
+function initSheetSwipe(ovId){
+  const ov=C(ovId);
+  if(!ov)return;
+  const sheet=ov.querySelector('.sheet');
+  if(!sheet)return;
+  let startY=0,startScroll=0,dragging=false;
+  sheet.addEventListener('touchstart',e=>{
+    startY=e.touches[0].clientY;
+    startScroll=sheet.scrollTop;
+    dragging=true;
+    sheet.style.transition='none';
+  },{passive:true});
+  sheet.addEventListener('touchmove',e=>{
+    if(!dragging)return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy>0&&startScroll<=0){
+      sheet.style.transform=`translateY(${Math.min(dy,400)}px)`;
+    }
+  },{passive:true});
+  sheet.addEventListener('touchend',e=>{
+    if(!dragging)return;
+    dragging=false;
+    const dy=e.changedTouches[0].clientY-startY;
+    sheet.style.transition='';
+    sheet.style.transform='';
+    if(dy>90&&startScroll<=0){
+      ov.classList.remove('on');
+      if(ovId==='ov-add')C('fab').classList.remove('open');
+    }
   },{passive:true});
 }
 
