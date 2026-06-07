@@ -541,6 +541,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <!-- HOME -->
     <div class="view on" id="v-home"><div class="page">
 
+      <div class="mnav glass" style="flex-direction:column;padding:.65rem .9rem;gap:.2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <div class="marr" onclick="chgMonth(-1)">‹</div>
+          <div class="mnav-lbl" id="m-lbl">—</div>
+          <div class="marr" onclick="chgMonth(1)">›</div>
+        </div>
+        <div style="font-size:.65rem;color:var(--txt3);text-align:center" id="home-date"></div>
+      </div>
+
       <div class="bal-hero glass">
         <div class="bal-open-row">
           <div class="bal-open-lbl" id="ob-lbl">פתיחה: ₪0</div>
@@ -577,20 +586,8 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         </div>
       </div>
 
-      <div class="mnav glass" style="flex-direction:column;padding:.65rem .9rem;gap:.2rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-          <div class="marr" onclick="chgMonth(-1)">‹</div>
-          <div class="mnav-lbl" id="m-lbl">—</div>
-          <div class="marr" onclick="chgMonth(1)">›</div>
-        </div>
-        <div style="font-size:.65rem;color:var(--txt3);text-align:center" id="home-date"></div>
-      </div>
 
-      <!-- Daily tip -->
-      <div class="tip-card glass">
-        <div class="tip-tag">💡 טיפ פיננסי יומי</div>
-        <div class="tip-text" id="daily-tip">טוען...</div>
-      </div>
+
 
 
 
@@ -729,7 +726,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="card glass" id="inv-summary-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
           <div class="card-head" style="margin-bottom:0">📈 תיק השקעות</div>
+          <div>
           <div style="font-size:.88rem;font-weight:700;color:var(--pur)" id="inv-total-val">₪0</div>
+          <div style="font-size:.7rem;color:var(--txt2)" id="inv-usd-eq">≈ $0</div>
+        </div>
         </div>
         <div style="display:flex;gap:.5rem;margin-bottom:.85rem">
           <div style="flex:1;background:var(--pur-d);border:1px solid rgba(191,90,242,0.2);border-radius:10px;padding:.6rem .7rem">
@@ -1027,7 +1027,44 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 
 // ════ SUPABASE ════
-// (wrapped in window.onload for Safari compatibility)
+// (wrapped in window.onload for Safari com
+
+
+// ════ SUPABASE ════
+// (wrapped in window.onl
+
+// ════ NEW: DAILY TIP ════
+const TIPS=[
+  'חוק 50/30/20: 50% לצרכים, 30% לרצונות, 20% לחיסכון.',
+  'קרן חירום של 3-6 חודשי הוצאות יכולה להציל אותך ממשבר.',
+  'אפקט הריבית דרבית — התחל לחסוך מוקדם ככל האפשר.',
+  'עקוב אחר ההוצאות הקטנות — הן מצטברות לסכומים גדולים.',
+  'השקעה ב-ETF מדדי היא אחת הדרכים הפשוטות לצמיחה לאורך זמן.',
+  'הימנע מקניות אימפולסיביות — המתן 24 שעות לפני רכישה גדולה.',
+  'ניהול תקציב לא מגביל אותך — הוא משחרר אותך לבחור.',
+  'השוו מחירים לפני רכישה גדולה — חיסכון של אחוזים בודדים = אלפי שקלים בשנה.',
+  'הכסף שאתה לא מוציא שווה יותר מהכסף שתרוויח — חיסכון הוא השקעה.',
+  'פנסיה = חופש — כל שקל שתחסוך היום שווה הרבה יותר בעתיד.',
+  'הגדר יעדים פיננסיים ברורים — ללא יעד אין כיוון.',
+  'אוטומציה של חיסכון — קבע הוראת קבע לחיסכון בתחילת החודש.',
+  'בדוק את העמלות הבנקאיות שלך — לעתים ניתן להוזיל משמעותית.',
+  'ביטוח מתאים = שקט נפשי — אל תחסוך על ביטוח חיוני.',
+  'השקע בעצמך — הכשרה מקצועית היא ההשקעה עם התשואה הטובה ביותר.',
+  'גיוון תיק ההשקעות מפחית סיכון ומגדיל הזדמנויות.',
+  'שלם חובות בריבית גבוהה לפני השקעה — זה כמו תשואה מובטחת.',
+  'קנה נכסים, לא חבויות — כל רכישה צריכה לייצר ערך.',
+  'מד החופש שלך הוא המספר החשוב ביותר — כמה זמן תוכל לחיות ללא הכנסה?',
+  'הדרך הטובה ביותר לעושר היא לבזבז פחות ממה שמרוויחים.',
+];
+
+function getDailyTip(){
+  try{
+    const day=Math.floor(Date.now()/86400000);
+    return TIPS[day%TIPS.length]||TIPS[0];
+  }catch(e){return 'נהל את הכסף שלך בחכמה 💚';}
+}
+
+// (wrapped in window.load for Safari compatibility)
 const SUPA_URL='https://dvqivkmaxegaklihwjpz.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2cWl2a21heGVnYWtsaWh3anB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1OTM4MTcsImV4cCI6MjA5NjE2OTgxN30.GeEyHvp6C9v7Ar9imvLzLCCoanIYqdd11mNCj3cvhdg';
 // Will be set after supabase loads
@@ -1266,9 +1303,17 @@ function openCashModal(){
   C('ov-cash').classList.add('on');
   setTimeout(()=>C('cash-inp').focus(),320);
 }
-function saveCash(){
+async function saveCash(){
   cashBalance=parseFloat(C('cash-inp').value)||0;
   localStorage.setItem('hofesh-cash',cashBalance);
+  // Also save to Supabase so it persists across devices
+  if(profile?.family_id){
+    await sb.from('family_settings').upsert({
+      family_id:profile.family_id,
+      cash_balance:cashBalance,
+      updated_at:new Date().toISOString()
+    },{onConflict:'family_id'});
+  }
   C('ov-cash').classList.remove('on');
   render();
   toast('מזומן עודכן ✓');
@@ -1412,6 +1457,11 @@ async function loadUserData(){
   goals=(goalRes.data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
   familySettings=settRes.data;
   ob=parseFloat(familySettings?.opening_balance||0);
+  // Load cash from Supabase (overrides localStorage)
+  if(familySettings?.cash_balance!=null){
+    cashBalance=parseFloat(familySettings.cash_balance||0);
+    localStorage.setItem('hofesh-cash',cashBalance);
+  }
 
   // update nav user avatar
   const initials=(profile.name||user.email||'?')[0].toUpperCase();
@@ -1435,36 +1485,58 @@ async function loadUserData(){
   // fetch USD rate with multiple fallbacks
   async function fetchUSDRate(){
     const apis=[
-      'https://api.exchangerate-api.com/v4/latest/USD',
-      'https://open.er-api.com/v6/latest/USD',
-      'https://api.frankfurter.app/latest?from=USD&to=ILS',
+      {url:'https://api.exchangerate-api.com/v4/latest/USD', parse:d=>d.rates?.ILS},
+      {url:'https://open.er-api.com/v6/latest/USD', parse:d=>d.rates?.ILS},
+      {url:'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', parse:d=>d.usd?.ils},
+      {url:'https://api.frankfurter.app/latest?from=USD&to=ILS', parse:d=>d.rates?.ILS},
     ];
-    for(const api of apis){
+    for(const {url,parse} of apis){
       try{
-        const r=await fetch(api);
+        const ctrl=new AbortController();
+        const timeout=setTimeout(()=>ctrl.abort(),5000);
+        const r=await fetch(url,{signal:ctrl.signal});
+        clearTimeout(timeout);
+        if(!r.ok)continue;
         const d=await r.json();
-        const rate=d.rates?.ILS||d.conversion_rates?.ILS;
-        if(rate&&rate>0&&rate<10){
-          usd=parseFloat(rate.toFixed(4));
-          localStorage.setItem('hofesh-usd',usd);
-          localStorage.setItem('hofesh-usd-time',Date.now());
+        const rate=parse(d);
+        if(rate&&rate>1&&rate<8){
+          usd=parseFloat(parseFloat(rate).toFixed(4));
+          localStorage.setItem('hofesh-usd',String(usd));
+          localStorage.setItem('hofesh-usd-time',String(Date.now()));
           document.querySelectorAll('.usd-rate-display').forEach(el=>{
             el.textContent='$1 = ₪'+usd.toFixed(2);
           });
+          console.log('USD rate loaded:',usd,'from',url);
           return;
         }
-      }catch(e){}
+      }catch(e){console.log('USD API failed:',e.message);}
     }
-  }
-  // Only fetch if cache is older than 1 hour
-  const lastFetch=parseInt(localStorage.getItem('hofesh-usd-time')||'0');
-  if(Date.now()-lastFetch>3600000||usd===3.70){
-    fetchUSDRate();
-  } else {
+    // All failed - show manual entry option
     document.querySelectorAll('.usd-rate-display').forEach(el=>{
-      el.textContent='$1 = ₪'+usd.toFixed(2);
+      el.textContent='שער לא זמין — הכנס ידנית';
+      el.style.cursor='pointer';
+      el.onclick=()=>{
+        const r=prompt('הכנס שער דולר ידנית (למשל: 3.65)');
+        const v=parseFloat(r);
+        if(v>1&&v<8){
+          usd=v;
+          localStorage.setItem('hofesh-usd',String(usd));
+          document.querySelectorAll('.usd-rate-display').forEach(e2=>{
+            e2.textContent='$1 = ₪'+usd.toFixed(2);
+            e2.style.cursor='';
+            e2.onclick=null;
+          });
+          toast('שער עודכן: $1 = ₪'+usd.toFixed(2));
+        }
+      };
     });
   }
+  // Always fetch on load to get fresh rate
+  fetchUSDRate();
+  // Show cached rate immediately while fetching
+  document.querySelectorAll('.usd-rate-display').forEach(el=>{
+    el.textContent=usd!==3.70?'$1 = ₪'+usd.toFixed(2):'מעדכן שער...';
+  });
 }
 
 // ════ REALTIME SYNC ════
@@ -1851,7 +1923,7 @@ function renderBalance(){
   const mt=mTxs();
   C('m-inc').textContent='₪'+fmt(sumT(mt,'income'));
   C('m-exp').textContent='₪'+fmt(sumT(mt,'expense'));
-  C('m-inv').textContent='₪'+fmt(sumT(mt,'invest'));
+  C('m-inv').textContent='₪'+fmt(sumT(txs,'invest')); // all-time invest
   C('m-sav').textContent='₪'+fmt(totalSav);
   const cashEl=C('m-cash');if(cashEl)cashEl.textContent='₪'+fmt(cashBalance);
   const ms=new Set(txs.filter(t=>t.type==='expense').map(t=>{const d=new Date(t.date);return d.getMonth()+'-'+d.getFullYear();})).size||1;
@@ -1922,7 +1994,7 @@ function renderBudget(){
     const pct=bud>0?Math.min(100,Math.round(spent/bud*100)):0;
     const cls=pct>=90?' danger':pct>=70?' warn':'';
     if(budEdit)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:.72rem;color:var(--txt2)">₪</span><input class="bud-inp" type="number" value="${buds[cat]||0}" onchange="setBud('${cat}',this.value)" min="0"></div></div></div>`;
-    if(!bud)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="font-size:.65rem;color:var(--txt3)">לא הוגדר</div></div></div>`;
+    if(!bud)return `<div class="bud-row"><div class="bud-top"><div class="bud-name" style="color:var(--txt)">${c.i} ${cat}</div><div style="font-size:.65rem;color:var(--txt3)">לא הוגדר — לחץ עריכה</div></div></div>`;
     return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:${pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--txt2)'}">₪${fmt(spent)} / ₪${fmt(bud)}</div></div><div class="ptrack"><div class="pfill${cls}" style="width:${pct}%;background:${c.c}"></div></div></div>`;
   }).join('');
 }
@@ -2071,8 +2143,6 @@ function render(){
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
     el.textContent='$1 = ₪'+usd.toFixed(2);
   });
-  // Daily tip
-  const tipEl=C('daily-tip');if(tipEl)tipEl.textContent=getDailyTip();
   // Freedom in stats
   const fns=C('fr-num-stats'),fss=C('fr-sub-stats'),fbs=C('fr-bar-stats');
   if(fns)fns.textContent=C('fr-num').textContent;
@@ -2213,6 +2283,9 @@ function renderInvestTab(){
   const inv_amt=C('inv-total-amt');
   const inv_pct=C('inv-pct-of-total');
   if(inv_total)inv_total.textContent='₪'+fmt(total);
+  // Show USD equivalent
+  const usdEq=C('inv-usd-eq');
+  if(usdEq&&usd>0)usdEq.textContent='≈ $'+fmt(Math.round(total/usd));
   if(inv_amt)inv_amt.textContent='₪'+fmt(total);
   if(inv_pct)inv_pct.textContent=allTotal>0?Math.round(total/allTotal*100)+'%':'0%';
 
@@ -2280,37 +2353,6 @@ function getTotal(){
   return ob+inc-exp+inv+getTotalSavings()+cashBalance;
 }
 
-// ════ NEW: DAILY TIP ════
-const TIPS=[
-  'חוק 50/30/20: 50% לצרכים, 30% לרצונות, 20% לחיסכון.',
-  'קרן חירום של 3-6 חודשי הוצאות יכולה להציל אותך ממשבר.',
-  'אפקט הריבית דרבית — התחל לחסוך מוקדם ככל האפשר.',
-  'עקוב אחר ההוצאות הקטנות — הן מצטברות לסכומים גדולים.',
-  'השקעה ב-ETF מדדי היא אחת הדרכים הפשוטות לצמיחה לאורך זמן.',
-  'הימנע מקניות אימפולסיביות — המתן 24 שעות לפני רכישה גדולה.',
-  'ניהול תקציב לא מגביל אותך — הוא משחרר אותך לבחור.',
-  'השוו מחירים לפני רכישה גדולה — חיסכון של אחוזים בודדים = אלפי שקלים בשנה.',
-  'הכסף שאתה לא מוציא שווה יותר מהכסף שתרוויח — חיסכון הוא השקעה.',
-  'פנסיה = חופש — כל שקל שתחסוך היום שווה הרבה יותר בעתיד.',
-  'הגדר יעדים פיננסיים ברורים — ללא יעד אין כיוון.',
-  'אוטומציה של חיסכון — קבע הוראת קבע לחיסכון בתחילת החודש.',
-  'בדוק את העמלות הבנקאיות שלך — לעתים ניתן להוזיל משמעותית.',
-  'ביטוח מתאים = שקט נפשי — אל תחסוך על ביטוח חיוני.',
-  'השקע בעצמך — הכשרה מקצועית היא ההשקעה עם התשואה הטובה ביותר.',
-  'גיוון תיק ההשקעות מפחית סיכון ומגדיל הזדמנויות.',
-  'שלם חובות בריבית גבוהה לפני השקעה — זה כמו תשואה מובטחת.',
-  'קנה נכסים, לא חבויות — כל רכישה צריכה לייצר ערך.',
-  'מד החופש שלך הוא המספר החשוב ביותר — כמה זמן תוכל לחיות ללא הכנסה?',
-  'הדרך הטובה ביותר לעושר היא לבזבז פחות ממה שמרוויחים.',
-];
-
-function getDailyTip(){
-  try{
-    const day=Math.floor(Date.now()/86400000);
-    return TIPS[day%TIPS.length]||TIPS[0];
-  }catch(e){return 'נהל את הכסף שלך בחכמה 💚';}
-}
-
 // ════ NEW: CHANGE NAME ════
 async function uploadAvatar(input){
   const file=input.files[0]; if(!file)return;
@@ -2374,7 +2416,6 @@ function setRealBalance(){
   C('ob-real').value='';
   toast('✓ חושב — לחץ שמור לאישור');
 }
-
 </script>
 </body>
 </html>
