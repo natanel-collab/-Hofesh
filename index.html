@@ -1893,7 +1893,6 @@ async function addTx(){
   const desc=C('a-desc').value.trim();
   const cat=C('a-cat').value;
   const date=C('a-date').value||new Date().toISOString().split('T')[0];
-  const isFuture=date>new Date().toISOString().split('T')[0];
   let usdOrig=null;
   if(aType==='invest'&&aCur==='USD'){usdOrig=amt;amt=parseFloat((amt*usd).toFixed(2));}
   const row={
