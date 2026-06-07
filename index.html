@@ -75,7 +75,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 [data-theme="light"] .glow-2{background:radial-gradient(circle,rgba(10,132,255,0.15),transparent 70%)}
 
 /* ══ APP SHELL ══ */
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;
+#app{display:flex;flex-direction:column;height:100svh;max-width:430px;
   margin:0 auto;position:relative;opacity:0;transition:opacity .3s;z-index:1}
 #app.show{opacity:1}
 #safe-top{flex-shrink:0;height:env(safe-area-inset-top,0px);background:transparent;width:100%}
@@ -129,7 +129,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   -webkit-backdrop-filter:blur(24px) saturate(180%);
   border-top:1px solid var(--border);
   padding:.4rem 0 calc(.4rem + env(safe-area-inset-bottom,0px));
-  z-index:10;
+  z-index:10;position:relative;
 }
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.18rem;
   padding:.25rem 0;background:none;border:none;cursor:pointer;font-family:inherit;
@@ -1024,14 +1024,11 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 </div><!-- /app -->
 
 <script>
-
-
-// ════ SUPABASE ════
-// (wrapped in window.onload for Safari com
-
-
-// ════ SUPABASE ════
-// (wrapped in window.onl
+// Apply saved theme immediately
+(function(){
+  const t=localStorage.getItem('hofesh-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
 
 // ════ NEW: DAILY TIP ════
 const TIPS=[
@@ -1097,11 +1094,24 @@ let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 
 const C=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString('he-IL',{maximumFractionDigits:0});
-const mTxs=(m=cM,y=cY)=>txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y;});
-const wTxs=()=>{const s=new Date();s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return txs.filter(t=>new Date(t.date)>=s);};
-const yTxs=(y=cY)=>txs.filter(t=>new Date(t.date).getFullYear()===y);
+const mTxs=(m=cM,y=cY)=>txs.filter(t=>{
+  // Use local date string to avoid timezone issues
+  const dStr=t.date?.substring(0,10)||'';
+  const parts=dStr.split('-');
+  if(parts.length<3)return false;
+  return parseInt(parts[1])-1===m&&parseInt(parts[0])===y;
+});
+const wTxs=()=>{
+  const s=new Date();s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);
+  return txs.filter(t=>new Date(t.date?.substring(0,10))>=s);
+};
+const yTxs=(y=cY)=>txs.filter(t=>parseInt(t.date?.substring(0,4))===y);
 const pTxs=()=>period==='week'?wTxs():period==='year'?yTxs():mTxs();
-const sumT=(arr,type)=>arr.filter(t=>t.type===type).reduce((s,t)=>s+t.amount,0);
+const sumT=(arr,type,includeFuture=false)=>{
+  const today=new Date().toISOString().split('T')[0];
+  return arr.filter(t=>t.type===type&&(includeFuture||!t.is_future||(t.date?.substring(0,10)<=today)))
+    .reduce((s,t)=>s+t.amount,0);
+};
 const getTotalSavings=()=>goals.reduce((s,g)=>s+(g.saved||0),0);
 
 // ════ TOAST ════
@@ -1482,57 +1492,86 @@ async function loadUserData(){
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
   render();
 
-  // fetch USD rate with multiple fallbacks
+  // ════ USD RATE - from Supabase (always works) ════
   async function fetchUSDRate(){
-    const apis=[
-      {url:'https://api.exchangerate-api.com/v4/latest/USD', parse:d=>d.rates?.ILS},
-      {url:'https://open.er-api.com/v6/latest/USD', parse:d=>d.rates?.ILS},
-      {url:'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', parse:d=>d.usd?.ils},
-      {url:'https://api.frankfurter.app/latest?from=USD&to=ILS', parse:d=>d.rates?.ILS},
+    try{
+      // Read from Supabase usd_rate table
+      const {data,error}=await sb.from('usd_rate').select('rate,updated_at').eq('id',1).single();
+      if(!error&&data?.rate){
+        const rate=parseFloat(data.rate);
+        if(rate>1&&rate<8){
+          usd=rate;
+          localStorage.setItem('hofesh-usd',String(usd));
+          const updated=new Date(data.updated_at).toLocaleDateString('he-IL');
+          document.querySelectorAll('.usd-rate-display').forEach(el=>{
+            el.textContent=`$1 = ₪${usd.toFixed(2)} (${updated})`;
+            el.style.cursor='';
+            el.onclick=null;
+          });
+          render();
+          return;
+        }
+      }
+    }catch(e){console.log('Supabase rate error:',e);}
+    
+    // Fallback: try external APIs
+    const externalApis=[
+      {url:'https://api.exchangerate-api.com/v4/latest/USD',parse:d=>d?.rates?.ILS},
+      {url:'https://open.er-api.com/v6/latest/USD',parse:d=>d?.rates?.ILS},
     ];
-    for(const {url,parse} of apis){
+    for(const {url,parse} of externalApis){
       try{
-        const ctrl=new AbortController();
-        const timeout=setTimeout(()=>ctrl.abort(),5000);
-        const r=await fetch(url,{signal:ctrl.signal});
-        clearTimeout(timeout);
+        const r=await fetch(url);
         if(!r.ok)continue;
         const d=await r.json();
         const rate=parse(d);
-        if(rate&&rate>1&&rate<8){
-          usd=parseFloat(parseFloat(rate).toFixed(4));
+        if(rate>1&&rate<8){
+          usd=parseFloat(rate.toFixed(4));
           localStorage.setItem('hofesh-usd',String(usd));
-          localStorage.setItem('hofesh-usd-time',String(Date.now()));
-          document.querySelectorAll('.usd-rate-display').forEach(el=>{
-            el.textContent='$1 = ₪'+usd.toFixed(2);
-          });
-          console.log('USD rate loaded:',usd,'from',url);
+          updateRateDisplays();
+          // Also save to Supabase for next time
+          try{await sb.from('usd_rate').update({rate:usd,updated_at:new Date().toISOString()}).eq('id',1);}catch(e){}
           return;
         }
-      }catch(e){console.log('USD API failed:',e.message);}
+      }catch(e){}
     }
-    // All failed - show manual entry option
+    
+    // All failed - show manual entry
     document.querySelectorAll('.usd-rate-display').forEach(el=>{
-      el.textContent='שער לא זמין — הכנס ידנית';
+      el.textContent='הכנס שער ידנית 👆';
       el.style.cursor='pointer';
-      el.onclick=()=>{
-        const r=prompt('הכנס שער דולר ידנית (למשל: 3.65)');
-        const v=parseFloat(r);
-        if(v>1&&v<8){
-          usd=v;
-          localStorage.setItem('hofesh-usd',String(usd));
-          document.querySelectorAll('.usd-rate-display').forEach(e2=>{
-            e2.textContent='$1 = ₪'+usd.toFixed(2);
-            e2.style.cursor='';
-            e2.onclick=null;
-          });
-          toast('שער עודכן: $1 = ₪'+usd.toFixed(2));
-        }
-      };
+      el.onclick=manualRateEntry;
     });
   }
-  // Always fetch on load to get fresh rate
-  fetchUSDRate();
+
+  function updateRateDisplays(){
+    document.querySelectorAll('.usd-rate-display').forEach(el=>{
+      el.textContent='$1 = ₪'+usd.toFixed(2);
+      el.style.cursor='';
+      el.onclick=null;
+    });
+  }
+
+  function manualRateEntry(){
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:2rem';
+    wrap.innerHTML=`<div style="background:var(--card-bg);backdrop-filter:blur(30px);border:1px solid var(--border2);border-radius:20px;padding:1.5rem;width:100%;max-width:320px;text-align:center">
+      <div style="font-size:.9rem;font-weight:700;margin-bottom:.35rem;color:var(--txt)">שער דולר ידני</div>
+      <div style="font-size:.75rem;color:var(--txt2);margin-bottom:.85rem">הכנס שער דולר עדכני</div>
+      <input id="manual-rate-inp" type="number" step="0.01" min="1" max="8" placeholder="3.65"
+        style="width:100%;padding:.75rem;border-radius:12px;background:var(--surface);border:1px solid var(--border2);color:var(--txt);font-size:1.2rem;text-align:center;font-family:inherit;outline:none;margin-bottom:.75rem" dir="ltr">
+      <button onclick="(async()=>{const v=parseFloat(document.getElementById('manual-rate-inp').value);if(v>1&&v<8){usd=v;localStorage.setItem('hofesh-usd',String(v));updateRateDisplays();try{await sb.from('usd_rate').update({rate:v,updated_at:new Date().toISOString()}).eq('id',1);}catch(e){}render();this.closest('[style]').remove();toast('שער עודכן ✓');}else{toast('שער לא תקין');}})()"
+        style="width:100%;padding:.8rem;border-radius:12px;background:var(--grn);color:#000;font-family:inherit;font-size:.95rem;font-weight:700;border:none;cursor:pointer;margin-bottom:.5rem">שמור</button>
+      <button onclick="this.closest('[style]').remove()"
+        style="width:100%;padding:.7rem;border-radius:12px;background:var(--surface);color:var(--txt2);font-family:inherit;font-size:.85rem;border:none;cursor:pointer">ביטול</button>
+    </div>`;
+    document.body.appendChild(wrap);
+    setTimeout(()=>document.getElementById('manual-rate-inp')?.focus(),100);
+  }
+
+  // Show cached rate immediately, then fetch fresh from Supabase
+  updateRateDisplays();
+  // Fetch after sb is initialized (called from loadUserData)
   // Show cached rate immediately while fetching
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
     el.textContent=usd!==3.70?'$1 = ₪'+usd.toFixed(2):'מעדכן שער...';
@@ -1546,16 +1585,16 @@ function subscribeRealtime(){
       {event:'INSERT',schema:'public',table:'transactions',filter:`family_id=eq.${profile.family_id}`},
       payload=>{
         const t=payload.new;
-        // Don't add if already exists (we added it locally)
-        if(!txs.find(x=>x.id===t.id)){
-          txs.unshift({...t,amount:parseFloat(t.amount)});
-          txs.sort((a,b)=>new Date(b.date)-new Date(a.date));
-          render();
-          // Show toast for other family members' transactions
-          if(t.user_id!==user.id){
-            const sign=t.type==='expense'?'-':'+';
-            toast(`${t.user_name||'בן משפחה'} הוסיף: ${sign}₪${fmt(t.amount)} · ${t.category}`);
-          }
+        // Skip if WE just added this (already in local array)
+        if(txs.find(x=>x.id===t.id))return;
+        // Add to local array
+        txs.unshift({...t,amount:parseFloat(t.amount)});
+        txs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+        render();
+        // Toast only for OTHER family members
+        if(t.user_id!==user?.id){
+          const sign=t.type==='expense'?'-':'+';
+          toast(`${t.user_name||'בן משפחה'}: ${sign}₪${fmt(t.amount)} · ${t.category}`);
         }
       })
     .on('postgres_changes',
@@ -1658,6 +1697,7 @@ async function addTx(){
   const desc=C('a-desc').value.trim();
   const cat=C('a-cat').value;
   const date=C('a-date').value||new Date().toISOString().split('T')[0];
+  const isFuture=date>new Date().toISOString().split('T')[0];
   let usdOrig=null;
   if(aType==='invest'&&aCur==='USD'){usdOrig=amt;amt=parseFloat((amt*usd).toFixed(2));}
   const row={
@@ -1668,7 +1708,8 @@ async function addTx(){
     amount:amt,
     description:(desc+(usdOrig?` ($${usdOrig})`:'')).trim()||cat,
     category:cat,
-    date:new Date(date+'T12:00:00').toISOString()
+    date:new Date(date+'T12:00:00').toISOString(),
+    is_future:isFuture||false
   };
   C('a-sub').textContent='שומר...';
   const {data:newTx,error}=await sb.from('transactions').insert(row).select().single();
@@ -1727,12 +1768,18 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  const w=C('txw-'+id);
-  if(w){w.style.transition='opacity .18s,transform .18s';w.style.opacity='0';w.style.transform='translateX(-100%)';}
-  await sb.from('transactions').delete().eq('id',id);
+  // Optimistic update - remove from UI immediately
   txs=txs.filter(t=>t.id!==id);
   render();
   toast('עסקה נמחקה');
+  // Then delete from DB in background
+  try{
+    await sb.from('transactions').delete().eq('id',id);
+  }catch(e){
+    // If DB delete fails, show error but keep local state
+    console.error('Delete failed:',e);
+    toast('שגיאה במחיקה — נסה שוב');
+  }
 }
 
 // ════ TX ROW ════
@@ -1747,7 +1794,7 @@ function mkTx(t,i){
     <div class="tx" onclick="toggleTxActions(${t.id})">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
-        <div class="tx-name">${t.description||t.category}</div>
+        <div class="tx-name">${t.description||t.category}${t.is_future?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
         <div class="tx-meta">${ds} · ${t.category}${whoTag?'&nbsp;'+whoTag:''}</div>
       </div>
       <div class="tx-amt" style="color:${col}">${sign}₪${fmt(t.amount)}</div>
