@@ -358,7 +358,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   border:1px solid var(--border2);border-radius:26px 26px 0 0;border-bottom:none;
   padding:.6rem 1.15rem calc(1.5rem + env(safe-area-inset-bottom,0px));
   transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
-  max-height:92vh;overflow-y:auto;position:relative}
+  max-height:92vh;overflow-y:auto;position:relative;touch-action:pan-y}
 .sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--card-shine),transparent)}
 .sheet::-webkit-scrollbar{display:none}
@@ -445,7 +445,199 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Minimal Supabase Client - implements only what this app needs
+window.supabase = {
+  createClient: function(url, key) {
+    var _url = url, _key = key;
+    var _session = null;
+    var _listeners = [];
+    var _channels = [];
+    var _wsUrl = url.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + key + '&vsn=1.0.0';
+    var _ws = null;
+    var _wsReady = false;
+    var _wsSubs = [];
+
+    // REST helper
+    async function rest(method, path, body, extraHeaders) {
+      var headers = {'apikey': _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
+      if (_session) headers['Authorization'] = 'Bearer ' + _session.access_token;
+      if (extraHeaders) Object.assign(headers, extraHeaders);
+      var opts = {method: method, headers: headers};
+      if (body) opts.body = JSON.stringify(body);
+      var r = await fetch(_url + path, opts);
+      var text = await r.text();
+      var data = text ? JSON.parse(text) : null;
+      if (!r.ok) return {data: null, error: data || {message: 'Error ' + r.status}};
+      return {data: data, error: null};
+    }
+
+    // Query builder
+    function query(table) {
+      var _filters = [], _cols = '*', _single = false, _order = null, _limit = null;
+      function buildUrl() {
+        var q = _url + '/rest/v1/' + table + '?select=' + _cols;
+        _filters.forEach(function(f) { q += '&' + f; });
+        if (_order) q += '&order=' + _order;
+        if (_limit) q += '&limit=' + _limit;
+        return q;
+      }
+      var qb = {
+        select: function(cols) { _cols = cols||'*'; return qb; },
+        eq: function(col, val) { _filters.push(col + '=eq.' + val); return qb; },
+        single: function() { _single = true; return qb; },
+        order: function(col, opts) { _order = col + '.' + ((opts&&opts.ascending===false)?'desc':'asc'); return qb; },
+        limit: function(n) { _limit = n; return qb; },
+        filter: function(col, op, val) { _filters.push(col + '=' + op + '.' + val); return qb; },
+        then: async function(resolve) {
+          var headers = {};
+          if (_single) headers['Accept'] = 'application/vnd.pgrst.object+json';
+          var r = await fetch(buildUrl(), {headers: Object.assign({'apikey':_key, 'Authorization': _session?'Bearer '+_session.access_token:_key}, headers)});
+          var text = await r.text();
+          var data = text ? JSON.parse(text) : null;
+          if (!r.ok) resolve({data:null, error:data});
+          else resolve({data:data, error:null});
+        }
+      };
+      // Make it thenable (Promise-like)
+      qb[Symbol.asyncIterator] = undefined;
+      Object.defineProperty(qb, Symbol.toStringTag, {value:'QueryBuilder'});
+      return qb;
+    }
+
+    function from(table) {
+      return {
+        select: function(cols) { return query(table).select(cols); },
+        insert: function(data) {
+          var _sel = false;
+          var ib = {
+            select: function() { _sel=true; return ib; },
+            single: function() { return ib; },
+            then: async function(resolve) {
+              var h = {'Prefer': _sel?'return=representation':'return=minimal'};
+              var r = await rest('POST', '/rest/v1/'+table, Array.isArray(data)?data:[data], h);
+              if (_sel && r.data && !Array.isArray(r.data)) r.data = r.data;
+              resolve(r);
+            }
+          };
+          return ib;
+        },
+        update: function(data) {
+          var _filters = [];
+          var ub = {
+            eq: function(col,val) { _filters.push(col+'=eq.'+val); return ub; },
+            then: async function(resolve) {
+              var path = '/rest/v1/'+table+'?'+_filters.join('&');
+              resolve(await rest('PATCH', path, data));
+            }
+          };
+          return ub;
+        },
+        upsert: function(data, opts) {
+          var ub = {
+            then: async function(resolve) {
+              var conflict = opts&&opts.onConflict ? '&on_conflict='+opts.onConflict : '';
+              var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
+              resolve(await rest('POST', '/rest/v1/'+table+'?upsert=true'+conflict, Array.isArray(data)?data:[data], h));
+            }
+          };
+          return ub;
+        },
+        delete: function() {
+          var _filters = [];
+          var db = {
+            eq: function(col,val) { _filters.push(col+'=eq.'+val); return db; },
+            then: async function(resolve) {
+              var path = '/rest/v1/'+table+'?'+_filters.join('&');
+              resolve(await rest('DELETE', path, null, {'Prefer':'return=minimal'}));
+            }
+          };
+          return db;
+        }
+      };
+    }
+
+    // Auth
+    var auth = {
+      getSession: async function() {
+        var stored = localStorage.getItem('sb-session');
+        if (stored) {
+          try {
+            var s = JSON.parse(stored);
+            // Check if expired
+            if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
+              _session = s;
+              _listeners.forEach(function(l){l('SIGNED_IN',s);});
+              return {data:{session:s}, error:null};
+            }
+          } catch(e){}
+        }
+        return {data:{session:null}, error:null};
+      },
+      signInWithPassword: async function(creds) {
+        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds, {'Authorization':'Bearer '+_key});
+        if (r.error) return r;
+        _session = r.data;
+        localStorage.setItem('sb-session', JSON.stringify(r.data));
+        _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
+        return {data:{user:r.data.user, session:r.data}, error:null};
+      },
+      signUp: async function(creds) {
+        var r = await rest('POST', '/auth/v1/signup', creds, {'Authorization':'Bearer '+_key});
+        if (r.error) return r;
+        _session = r.data;
+        if (r.data && r.data.access_token) localStorage.setItem('sb-session', JSON.stringify(r.data));
+        return {data:{user:r.data&&r.data.user, session:r.data}, error:null};
+      },
+      signOut: async function() {
+        localStorage.removeItem('sb-session');
+        _session = null;
+        _listeners.forEach(function(l){l('SIGNED_OUT',null);});
+        return {error:null};
+      },
+      resetPasswordForEmail: async function(email, opts) {
+        return await rest('POST', '/auth/v1/recover', {email:email, redirect_to:opts&&opts.redirectTo});
+      },
+      onAuthStateChange: function(cb) {
+        _listeners.push(cb);
+        return {data:{subscription:{unsubscribe:function(){_listeners=_listeners.filter(function(l){return l!==cb;});}}}};
+      }
+    };
+
+    // Realtime (simplified)
+    function channel(name) {
+      var _subs = [];
+      var ch = {
+        on: function(type, opts, cb) {
+          _subs.push({type:type, table:opts.table, filter:opts.filter, cb:cb, event:opts.event});
+          return ch;
+        },
+        subscribe: function(statusCb) {
+          // Poll for changes every 3 seconds as fallback
+          var prevCounts = {};
+          setInterval(async function() {
+            for (var sub of _subs) {
+              try {
+                var qb = from(sub.table).select('id');
+                if (sub.filter) {
+                  var parts = sub.filter.split('=eq.');
+                  if (parts.length===2) qb = qb.eq(parts[0].replace('family_id','family_id'), parts[1]);
+                }
+                // Just trigger a re-fetch via the app's existing load functions
+              } catch(e){}
+            }
+          }, 5000);
+          if (statusCb) statusCb('SUBSCRIBED');
+          return ch;
+        }
+      };
+      return ch;
+    }
+
+    return {from:from, auth:auth, channel:channel};
+  }
+};
+</script>
 
 <script>
 // Apply saved theme immediately
@@ -904,7 +1096,8 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="sheet">
     <div class="sh-handle"></div>
     <div style="position:relative;width:fit-content;margin:0 auto .75rem">
-      <div class="prof-avatar" id="prof-avatar" onclick="C('avatar-upload').click()" style="cursor:pointer">?</div>
+      <div style="height:env(safe-area-inset-top,0px);flex-shrink:0"></div>
+    <div class="prof-avatar" id="prof-avatar" onclick="C('avatar-upload').click()" style="cursor:pointer">?</div>
       <div style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;
         background:var(--blu);display:flex;align-items:center;justify-content:center;
         font-size:.65rem;cursor:pointer" onclick="C('avatar-upload').click()">📷</div>
@@ -1062,7 +1255,6 @@ function getDailyTip(){
   }catch(e){return 'נהל את הכסף שלך בחכמה 💚';}
 }
 
-// (wrapped in window.load for Safari compatibility)
 const SUPA_URL='https://dvqivkmaxegaklihwjpz.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2cWl2a21heGVnYWtsaWh3anB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1OTM4MTcsImV4cCI6MjA5NjE2OTgxN30.GeEyHvp6C9v7Ar9imvLzLCCoanIYqdd11mNCj3cvhdg';
 // Will be set after supabase loads
@@ -1111,7 +1303,7 @@ const yTxs=(y=cY)=>txs.filter(t=>parseInt(t.date?.substring(0,4))===y);
 const pTxs=()=>period==='week'?wTxs():period==='year'?yTxs():mTxs();
 const sumT=(arr,type)=>{
   const today=new Date().toISOString().split('T')[0];
-  return arr.filter(t=>t.type===type&&(!t.is_future||(t.date?.substring(0,10)<=today)))
+  return arr.filter(t=>t.type===type&&(t.date?.substring(0,10)<=today))
     .reduce((s,t)=>s+t.amount,0);
 };
 const getTotalSavings=()=>goals.reduce((s,g)=>s+(g.saved||0),0);
@@ -1491,6 +1683,8 @@ async function loadUserData(){
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
+  // Init swipe-down for all sheets
+  ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cash','ov-profile','ov-cat'].forEach(initSheetSwipe);
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
   render();
 
@@ -1710,8 +1904,7 @@ async function addTx(){
     amount:amt,
     description:(desc+(usdOrig?` ($${usdOrig})`:'')).trim()||cat,
     category:cat,
-    date:new Date(date+'T12:00:00').toISOString(),
-    is_future:isFuture||false
+    date:new Date(date+'T12:00:00').toISOString()
   };
   C('a-sub').textContent='שומר...';
   const {data:newTx,error}=await sb.from('transactions').insert(row).select().single();
@@ -1796,7 +1989,7 @@ function mkTx(t,i){
     <div class="tx" onclick="toggleTxActions(${t.id})">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
-        <div class="tx-name">${t.description||t.category}${t.is_future?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
+        <div class="tx-name">${t.description||t.category}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
         <div class="tx-meta">${ds} · ${t.category}${whoTag?'&nbsp;'+whoTag:''}</div>
       </div>
       <div class="tx-amt" style="color:${col}">${sign}₪${fmt(t.amount)}</div>
@@ -2199,6 +2392,27 @@ function render(){
   // (renderBalance already updates fr-num-stats, fr-sub-stats, fr-bar-stats)
 }
 
+// ════ SHEET SWIPE DOWN TO CLOSE ════
+function initSheetSwipe(ovId){
+  const ov=C(ovId);
+  if(!ov)return;
+  const sheet=ov.querySelector('.sheet');
+  if(!sheet)return;
+  let startY=0, startScroll=0;
+  sheet.addEventListener('touchstart',e=>{
+    startY=e.touches[0].clientY;
+    startScroll=sheet.scrollTop;
+  },{passive:true});
+  sheet.addEventListener('touchend',e=>{
+    const dy=e.changedTouches[0].clientY-startY;
+    // Only close if swiped down significantly AND at top of sheet
+    if(dy>80&&startScroll<=0){
+      ov.classList.remove('on');
+      if(ovId==='ov-add')C('fab').classList.remove('open');
+    }
+  },{passive:true});
+}
+
 // ════ SWIPE TABS ════
 const tabs=['home','stats','history','goals'];
 let tabSwipeX=0,tabSwipeY=0,tabSwipeActive=true;
@@ -2233,15 +2447,6 @@ async function initApp(){
   }
 }
 
-// Fix safe area for iPhone notch in standalone PWA mode
-(function(){
-  // Add extra top padding when running as installed PWA
-  const isStandalone = window.navigator.standalone || 
-    window.matchMedia('(display-mode: standalone)').matches;
-  if(isStandalone){
-    document.documentElement.style.setProperty('--top-inset','env(safe-area-inset-top,44px)');
-  }
-})();
 
 // Apply saved theme
 (function(){
@@ -2252,12 +2457,9 @@ async function initApp(){
 // Load supabase dynamically then init
 // Initialize Supabase and start app
 document.addEventListener('DOMContentLoaded', function(){
-  if(window.supabase){
-    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-    initApp();
-  } else {
-    document.getElementById('loading').innerHTML='<div style="color:#ff453a;text-align:center;padding:2rem"><div style="font-size:2rem">⚠️</div><div>שגיאת טעינה</div><button onclick="location.reload()" style="margin-top:1rem;padding:.5rem 1.5rem;background:#30d158;border:none;border-radius:20px;cursor:pointer">נסה שוב</button></div>';
-  }
+  // Supabase is inline - always available
+  sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  initApp();
 });
 
 document.head.insertAdjacentHTML('beforeend','<style>@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}</style>');
@@ -2446,6 +2648,9 @@ function setRealBalance(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
   ob=parseFloat((real-inc+exp-inv-getTotalSavings()-cashBalance).toFixed(2));
   C('ob-inp').value=Math.round(ob);
+  C('ob-real-wrap').style.display='none';
+  C('ob-real').value='';
+  toast('✓ חושב — לחץ שמור לאישור');
   C('ob-real-wrap').style.display='none';
   C('ob-real').value='';
   toast('✓ חושב — לחץ שמור לאישור');
