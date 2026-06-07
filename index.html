@@ -16,12 +16,12 @@
   --grn:#30d158;--grn-d:rgba(48,209,88,0.12);--grn-b:rgba(48,209,88,0.22);
   --red:#ff453a;--red-d:rgba(255,69,58,0.12);--red-b:rgba(255,69,58,0.22);
   --blu:#0a84ff;--blu-d:rgba(10,132,255,0.12);--blu-b:rgba(10,132,255,0.22);
-  --ylw:#ffd60a;--pur:#bf5af2;--pur-d:rgba(191,90,242,0.12);
+  --ylw:#ffd60a;--pur:#bf5af2;--pur-d:rgba(191,90,242,0.12);--ylw:#ffd60a;
   --r:18px;--rs:12px;
 }
-html,body{height:100%;-webkit-text-size-adjust:100%}
+html{height:100%;position:fixed;width:100%;overflow:hidden}
 body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var(--txt);
-  -webkit-font-smoothing:antialiased;direction:rtl;overflow:hidden}
+  -webkit-font-smoothing:antialiased;direction:rtl;overflow:hidden;height:100%;width:100%;-webkit-text-size-adjust:100%}
 
 /* ── AUTH SCREENS ── */
 #auth-wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
@@ -67,7 +67,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .invite-code-lbl{font-size:.7rem;color:var(--txt2);margin-top:.25rem}
 
 /* ── APP SHELL ── */
-#app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;
+#app{display:flex;flex-direction:column;height:100svh;max-width:430px;margin:0 auto;
   position:relative;opacity:0;transition:opacity .3s}
 #app.show{opacity:1}
 
@@ -92,7 +92,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── TAB BAR ── */
 #tabbar{flex-shrink:0;display:flex;background:rgba(0,0,0,0.95);
-  border-top:.5px solid var(--b1);padding:.4rem 0 calc(.4rem + env(safe-area-inset-bottom,0px))}
+  border-top:.5px solid var(--b1);padding:.4rem 0 calc(.4rem + env(safe-area-inset-bottom,0px));position:relative;z-index:10}
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.18rem;
   padding:.25rem 0;background:none;border:none;cursor:pointer;font-family:inherit;
   -webkit-tap-highlight-color:transparent}
@@ -387,6 +387,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 <!-- MAIN APP -->
 <div id="app">
+  <div style="flex-shrink:0;height:env(safe-area-inset-top,0px);background:#000;width:100%"></div>
   <div id="safe-top" style="flex-shrink:0;height:env(safe-area-inset-top,0px);background:rgba(0,0,0,0.9);width:100%"></div>
   <div id="topnav">
     <div class="logo">החופש <span>לבחור</span></div>
@@ -684,22 +685,83 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="ov" id="ov-profile" onclick="if(event.target===this)C('ov-profile').classList.remove('on')">
   <div class="sheet">
     <div class="sh-handle"></div>
-    <div class="prof-avatar" id="prof-avatar">?</div>
+
+    <!-- Avatar + name -->
+    <div style="position:relative;width:fit-content;margin:0 auto .5rem">
+      <div class="prof-avatar" id="prof-avatar" onclick="C('avatar-inp').click()" style="cursor:pointer;font-size:1.4rem">?</div>
+      <div onclick="C('avatar-inp').click()" style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--blu);display:flex;align-items:center;justify-content:center;font-size:.65rem;cursor:pointer">📷</div>
+      <input type="file" id="avatar-inp" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+    </div>
     <div class="prof-name" id="prof-name">—</div>
-    <div class="prof-email" id="prof-email">—</div>
+    <div class="prof-email" id="prof-email" style="margin-bottom:.75rem">—</div>
+
+    <!-- Change name -->
+    <div style="margin-bottom:.75rem">
+      <button onclick="C('chname-wrap').style.display=C('chname-wrap').style.display==='none'?'flex':'none'"
+        style="width:100%;padding:.6rem;border-radius:var(--rs);background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.8rem;cursor:pointer">✎ שנה שם</button>
+      <div id="chname-wrap" style="display:none;gap:.5rem;margin-top:.4rem">
+        <div class="auth-field" style="flex:1;margin-bottom:0"><span class="auth-fi">👤</span>
+          <input type="text" id="new-name-inp" placeholder="שם חדש" maxlength="30"></div>
+        <button onclick="saveName()" style="padding:.6rem 1rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.85rem;font-weight:700;border:none;cursor:pointer">שמור</button>
+      </div>
+    </div>
+
+    <!-- Family section -->
     <div class="prof-family" id="prof-family-section">
       <div class="prof-family-lbl">👨‍👩‍👧 משפחה</div>
       <div class="prof-family-name" id="prof-family-name">—</div>
       <div class="invite-display">
         <div>
-          <div style="font-size:.65rem;color:var(--txt2);margin-bottom:.2rem">קוד הזמנה לאישתך</div>
+          <div style="font-size:.65rem;color:var(--txt2);margin-bottom:.2rem">קוד הזמנה משפחתי</div>
           <div class="invite-code-big" id="prof-invite-code">——</div>
         </div>
         <button class="copy-btn" onclick="copyInviteCode()">העתק</button>
       </div>
     </div>
-    <div id="family-members" style="margin-bottom:1rem"></div>
-    <button onclick="doLogout()" style="width:100%;padding:.75rem;border-radius:var(--rs);background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer">יציאה מהחשבון</button>
+
+    <!-- Family members -->
+    <div id="family-members" style="margin-bottom:.75rem"></div>
+
+    <!-- Join different family -->
+    <div style="margin-bottom:.75rem">
+      <button onclick="C('join-fam-wrap').style.display=C('join-fam-wrap').style.display==='none'?'flex':'none'"
+        style="width:100%;padding:.6rem;border-radius:var(--rs);background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.8rem;cursor:pointer">🔑 הזן קוד משפחה אחר</button>
+      <div id="join-fam-wrap" style="display:none;gap:.5rem;margin-top:.4rem">
+        <div class="auth-field" style="flex:1;margin-bottom:0"><span class="auth-fi">🔑</span>
+          <input type="text" id="prof-join-code" placeholder="קוד 6 ספרות" maxlength="6" dir="ltr"
+            style="letter-spacing:.15em;font-size:1rem;font-weight:700"></div>
+        <button onclick="joinFamilyFromProfile()" style="padding:.6rem 1rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.85rem;font-weight:700;border:none;cursor:pointer">הצטרף</button>
+      </div>
+      <div id="prof-join-err" style="font-size:.72rem;color:var(--red);min-height:.9rem;margin-top:.2rem"></div>
+    </div>
+
+    <!-- Theme toggle -->
+    <div style="background:var(--s1);border:.5px solid var(--b1);border-radius:var(--rs);padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:.85rem">🌓 מצב תצוגה</div>
+      <div style="display:flex;gap:.35rem">
+        <button id="theme-dark-btn" onclick="setTheme('dark')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--s2);border:.5px solid var(--b2);color:var(--txt)">כהה</button>
+        <button id="theme-light-btn" onclick="setTheme('light')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--s1);border:.5px solid var(--b1);color:var(--txt2)">בהיר</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <button onclick="leaveFamily()" style="width:100%;padding:.65rem;border-radius:var(--rs);background:rgba(255,214,10,.1);border:.5px solid rgba(255,214,10,.25);color:var(--ylw);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;margin-bottom:.5rem">עזוב משפחה</button>
+    <button onclick="doLogout()" style="width:100%;padding:.75rem;border-radius:var(--rs);background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:.5rem">יציאה מהחשבון</button>
+    <button onclick="confirmDeleteAccount()" style="width:100%;padding:.65rem;border-radius:var(--rs);background:none;border:.5px solid var(--b1);color:var(--txt3);font-family:inherit;font-size:.78rem;cursor:pointer">מחיקת חשבון</button>
+  </div></div>
+
+  <!-- DELETE ACCOUNT MODAL -->
+  <div class="ov" id="ov-del-account" onclick="if(event.target===this)C('ov-del-account').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title" style="color:var(--red)">⚠️ מחיקת חשבון</div>
+    <div style="background:var(--red-d);border:.5px solid var(--red-b);border-radius:12px;padding:.9rem;margin-bottom:1rem;text-align:center;font-size:.8rem;color:var(--red);line-height:1.6">פעולה זו תמחק את חשבונך לצמיתות</div>
+    <div style="font-size:.82rem;color:var(--txt2);margin-bottom:.5rem;text-align:center">להמשך הקלד: <strong id="del-confirm-code" style="color:var(--txt);font-size:1.1rem;letter-spacing:.15em">----</strong></div>
+    <div class="auth-field"><span class="auth-fi">🔑</span>
+      <input type="number" id="del-code-inp" placeholder="קוד אישור" maxlength="4" dir="ltr"
+        style="text-align:center;letter-spacing:.15em;font-size:1.1rem"></div>
+    <button onclick="executeDeleteAccount()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">מחק לצמיתות</button>
+    <button onclick="C('ov-del-account').classList.remove('on')" style="width:100%;margin-top:.4rem;padding:.7rem;border-radius:var(--rs);background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
   </div></div>
 
 </div><!-- /app -->
@@ -844,6 +906,9 @@ async function loadUserData(){
   // update nav user avatar
   const initials=(profile.name||user.email||'?')[0].toUpperCase();
   C('nav-user').textContent=initials;
+  // Apply saved avatar
+  const savedAv=localStorage.getItem('hofesh-av-'+user.id);
+  if(savedAv)applyAvatar(savedAv);
 
   showLoading(false);
   C('auth-wrap').classList.add('hide');
@@ -1144,20 +1209,118 @@ async function saveGoalProgress(){
 
 // ════ PROFILE ════
 async function openProfile(){
-  C('prof-avatar').textContent=(profile?.name||user?.email||'?')[0].toUpperCase();
+  applyAvatar(localStorage.getItem('hofesh-av-'+(user?.id||'')));
   C('prof-name').textContent=profile?.name||'—';
   C('prof-email').textContent=user?.email||'—';
   C('prof-family-name').textContent=family?.name||'—';
   C('prof-invite-code').textContent=profile?.family_code||'——';
-  // load family members
+  C('chname-wrap').style.display='none';
+  C('join-fam-wrap').style.display='none';
+  C('prof-join-err').textContent='';
+  // Load family members
+  const isOwner=family?.created_by===user.id;
   const {data:members}=await sb.from('profiles').select('name,id').eq('family_id',profile.family_id);
   C('family-members').innerHTML=(members||[]).map(m=>`
     <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:.5px solid var(--b1)">
       <div style="width:28px;height:28px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--txt2)">${(m.name||'?')[0]}</div>
-      <div style="font-size:.82rem">${m.name||'אנונימי'}${m.id===user.id?' (אתה)':''}</div>
+      <div style="font-size:.82rem;flex:1">${m.name||'אנונימי'}${m.id===user.id?' (אתה)':''}</div>
+      ${isOwner&&m.id!==user.id?`<button onclick="removeMember('${m.id}','${m.name||'משתמש'}')" style="background:var(--red-d);border:.5px solid var(--red-b);border-radius:8px;color:var(--red);font-size:.68rem;font-weight:600;padding:.2rem .5rem;cursor:pointer;font-family:inherit">הסר</button>`:''}
     </div>`).join('');
   C('ov-profile').classList.add('on');
 }
+async function removeMember(id,name){
+  if(!confirm(`להסיר את ${name}?`))return;
+  await sb.from('profiles').update({family_id:null,family_code:null}).eq('id',id);
+  toast(`${name} הוסר ✓`);
+  openProfile();
+}
+// ── AVATAR ──
+function uploadAvatar(inp){
+  const file=inp.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const d=e.target.result;
+    localStorage.setItem('hofesh-av-'+user.id,d);
+    applyAvatar(d);
+    toast('תמונה עודכנה ✓');
+  };
+  r.readAsDataURL(file);
+}
+function applyAvatar(src){
+  const el=C('prof-avatar');if(!el)return;
+  if(src){el.style.background='none';el.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
+  else el.innerHTML=(profile?.name||user?.email||'?')[0].toUpperCase();
+  // Nav avatar
+  const nav=C('nav-user');
+  if(src){nav.style.background='none';nav.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;}
+  else{nav.style.background='';nav.innerHTML=(profile?.name||user?.email||'?')[0].toUpperCase();}
+}
+
+// ── CHANGE NAME ──
+async function saveName(){
+  const name=C('new-name-inp').value.trim();
+  if(!name){toast('הכנס שם');return;}
+  await sb.from('profiles').update({name}).eq('id',user.id);
+  profile.name=name;
+  C('prof-name').textContent=name;
+  C('chname-wrap').style.display='none';
+  applyAvatar(localStorage.getItem('hofesh-av-'+user.id));
+  toast('שם עודכן ✓');
+}
+
+// ── LEAVE FAMILY ──
+function leaveFamily(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:2rem';
+  ov.innerHTML=`<div style="background:var(--bg2);border:.5px solid var(--b2);border-radius:20px;padding:1.5rem;width:100%;max-width:320px;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:.5rem">👋</div>
+    <div style="font-size:.95rem;font-weight:700;margin-bottom:.5rem">עזיבת משפחה</div>
+    <div style="font-size:.8rem;color:var(--txt2);margin-bottom:1.25rem;line-height:1.6">הנתונים יישארו במשפחה.<br>תוכל להצטרף למשפחה אחרת.</div>
+    <button onclick="doLeaveFamily()" style="width:100%;padding:.8rem;border-radius:var(--rs);background:var(--ylw);color:#000;font-family:inherit;font-size:.9rem;font-weight:700;border:none;cursor:pointer;margin-bottom:.5rem">אישור — עזוב</button>
+    <button onclick="this.closest('div[style]').remove()" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.85rem;cursor:pointer">ביטול</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+async function doLeaveFamily(){
+  await sb.from('profiles').update({family_id:null,family_code:null}).eq('id',user.id);
+  location.reload();
+}
+
+// ── JOIN FAMILY FROM PROFILE ──
+async function joinFamilyFromProfile(){
+  const code=C('prof-join-code').value.trim();
+  if(code.length!==6){C('prof-join-err').textContent='קוד חייב להיות 6 ספרות';return;}
+  C('prof-join-err').textContent='מחפש...';
+  const {data:owner,error}=await sb.from('profiles').select('family_id').eq('family_code',code).single();
+  if(error||!owner?.family_id){C('prof-join-err').textContent='קוד לא נמצא';return;}
+  if(owner.family_id===profile.family_id){C('prof-join-err').textContent='אתה כבר במשפחה זו';return;}
+  await sb.from('profiles').update({family_id:owner.family_id}).eq('id',user.id);
+  toast('הצטרפת למשפחה ✓');
+  setTimeout(()=>location.reload(),1000);
+}
+
+// ── THEME ──
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('hofesh-theme',t);
+}
+
+// ── DELETE ACCOUNT ──
+let _delCode='';
+function confirmDeleteAccount(){
+  C('ov-profile').classList.remove('on');
+  _delCode=Math.floor(1000+Math.random()*9000).toString();
+  C('del-confirm-code').textContent=_delCode;
+  C('del-code-inp').value='';
+  C('ov-del-account').classList.add('on');
+}
+async function executeDeleteAccount(){
+  if(C('del-code-inp').value!==_delCode){toast('קוד שגוי');return;}
+  await sb.from('profiles').delete().eq('id',user.id);
+  await sb.auth.signOut();
+  location.reload();
+}
+
 function copyInviteCode(){
   navigator.clipboard?.writeText(profile?.family_code||'').then(()=>toast('קוד הועתק ✓'));
 }
@@ -1408,6 +1571,10 @@ sb.auth.onAuthStateChange(async(event,session)=>{
 });
 
 document.head.insertAdjacentHTML('beforeend','<style>@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}</style>');
+(function(){
+  const t=localStorage.getItem('hofesh-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
 </script>
 </body>
 </html>
