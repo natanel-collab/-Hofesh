@@ -816,6 +816,7 @@ async function joinFamily(){
 
 // ════ LOAD DATA ════
 async function loadUserData(){
+  try {
   showLoading(true);
   // load profile
   const {data:prof}=await sb.from('profiles').select('*').eq('id',user.id).single();
