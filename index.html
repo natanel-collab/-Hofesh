@@ -445,6 +445,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script>
 // Apply saved theme immediately
@@ -2249,29 +2250,14 @@ async function initApp(){
 })();
 
 // Load supabase dynamically then init
+// Initialize Supabase and start app
 document.addEventListener('DOMContentLoaded', function(){
-(function(){
-  var s=document.createElement('script');
-  s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
-  s.onload=function(){
-    sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  if(window.supabase){
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     initApp();
-  };
-  s.onerror=function(){
-    // Try fallback CDN
-    var s2=document.createElement('script');
-    s2.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';
-    s2.onload=function(){
-      sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-      initApp();
-    };
-    s2.onerror=function(){
-      document.getElementById('loading').innerHTML='<div style="color:#ff453a;text-align:center;padding:2rem;font-family:sans-serif"><div style="font-size:2rem">⚠️</div><div style="margin:.5rem 0">שגיאת רשת</div><div style="font-size:.75rem;color:#888">לא ניתן לטעון את הספריה</div><button onclick="location.reload()" style="margin-top:1rem;padding:.5rem 1.5rem;background:#30d158;border:none;border-radius:20px;cursor:pointer">נסה שוב</button></div>';
-    };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s);
-})();
+  } else {
+    document.getElementById('loading').innerHTML='<div style="color:#ff453a;text-align:center;padding:2rem"><div style="font-size:2rem">⚠️</div><div>שגיאת טעינה</div><button onclick="location.reload()" style="margin-top:1rem;padding:.5rem 1.5rem;background:#30d158;border:none;border-radius:20px;cursor:pointer">נסה שוב</button></div>';
+  }
 });
 
 document.head.insertAdjacentHTML('beforeend','<style>@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}</style>');
