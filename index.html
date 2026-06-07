@@ -504,11 +504,21 @@ window.supabase = {
         if (stored) {
           try {
             var s = JSON.parse(stored);
-            // Check if expired
             if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
+              // Token still valid
               _session = s;
-              _listeners.forEach(function(l){l('SIGNED_IN',s);});
               return {data:{session:s}, error:null};
+            } else if (s.refresh_token) {
+              // Token expired - try to refresh
+              try {
+                var r = await rest('POST', '/auth/v1/token?grant_type=refresh_token',
+                  {refresh_token: s.refresh_token}, {'Authorization':'Bearer '+_key});
+                if (r.data && r.data.access_token) {
+                  _session = r.data;
+                  localStorage.setItem('sb-session', JSON.stringify(r.data));
+                  return {data:{session:r.data}, error:null};
+                }
+              } catch(e2) {}
             }
           } catch(e){}
         }
@@ -1982,7 +1992,9 @@ function toggleBudEdit(){
 async function setBud(cat,v){
   const amt=Math.max(0,parseFloat(v)||0);
   buds[cat]=amt;
-  await sb.from('budgets').upsert({family_id:profile.family_id,category:cat,amount:amt},{onConflict:'family_id,category'});
+  const {data,error}=await sb.from('budgets').upsert({family_id:profile.family_id,category:cat,amount:amt},{onConflict:'family_id,category'});
+  if(error){toast('שגיאת שמירה: '+error.message);console.error('setBud error:',error);}
+  else{toast('תקציב נשמר ✓');}
   renderBudget();
 }
 
