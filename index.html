@@ -546,7 +546,6 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
           <div class="bal-open-lbl" id="ob-lbl">פתיחה: ₪0</div>
           <button class="bal-open-btn" onclick="openOb()">✎ עדכן</button>
         </div>
-        <div style="font-size:.68rem;color:var(--txt3);margin-bottom:.15rem;position:relative;z-index:1" id="home-date"></div>
         <div class="bal-lbl">יתרה כוללת</div>
         <div class="bal-big" id="bal-big" onclick="openOb()">₪0</div>
         <div class="bal-row">
@@ -578,21 +577,13 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         </div>
       </div>
 
-      <div class="mnav glass">
-        <div class="marr" onclick="chgMonth(-1)">‹</div>
-        <div class="mnav-lbl" id="m-lbl">—</div>
-        <div class="marr" onclick="chgMonth(1)">›</div>
-      </div>
-
-      <!-- Freedom mini on home -->
-      <div class="glass" style="padding:.75rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="goTab('stats')">
-        <div>
-          <div style="font-size:.62rem;color:var(--grn);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem">⚡ מד החופש</div>
-          <div style="font-size:.72rem;color:var(--txt2)">חודשים ללא הכנסה</div>
+      <div class="mnav glass" style="flex-direction:column;padding:.65rem .9rem;gap:.2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <div class="marr" onclick="chgMonth(-1)">‹</div>
+          <div class="mnav-lbl" id="m-lbl">—</div>
+          <div class="marr" onclick="chgMonth(1)">›</div>
         </div>
-        <div style="text-align:left">
-          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-.04em;color:var(--grn);line-height:1" id="home-freedom-num">–</div>
-        </div>
+        <div style="font-size:.65rem;color:var(--txt3);text-align:center" id="home-date"></div>
       </div>
 
       <!-- Daily tip -->
@@ -655,7 +646,17 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
       <!-- Freedom in stats -->
       <div class="freedom glass" style="margin-bottom:.65rem">
-        <div class="freedom-tag">⚡ מד החופש</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+          <div class="freedom-tag" style="margin-bottom:0">⚡ מד החופש</div>
+          <div onclick="C('freedom-explain').style.display=C('freedom-explain').style.display==='none'?'block':'none'"
+            style="font-size:.65rem;color:var(--grn);opacity:.8;cursor:pointer">מה זה? ℹ️</div>
+        </div>
+        <div id="freedom-explain" style="display:none;font-size:.72rem;color:var(--grn);
+          background:rgba(48,209,88,0.08);border-radius:9px;padding:.55rem .75rem;margin-bottom:.6rem;line-height:1.6">
+          <strong>איך מחושב:</strong><br>
+          יתרה כוללת ÷ ממוצע הוצאות חודשי<br>
+          <span style="opacity:.8">= כמה חודשים תוכל לחיות ללא הכנסה כלל</span>
+        </div>
         <div class="freedom-num" id="fr-num-stats">–</div>
         <div class="freedom-sub" id="fr-sub-stats">חודשים של חופש כלכלי</div>
         <div class="fbar"><div class="fbar-fill" id="fr-bar-stats" style="width:0%"></div></div>
@@ -1431,17 +1432,39 @@ async function loadUserData(){
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
   render();
 
-  // fetch USD rate
-  fetch('https://api.exchangerate-api.com/v4/latest/USD')
-    .then(r=>r.json()).then(d=>{
-      usd=d.rates?.ILS||3.70;
-      localStorage.setItem('hofesh-usd',usd);
-      // Update all rate displays
-      document.querySelectorAll('.usd-rate-display').forEach(el=>{
-        el.textContent='$1 = ₪'+usd.toFixed(2);
-      });
-      if(C('cur-rate'))C('cur-rate').textContent='$1 = ₪'+usd.toFixed(2);
-    }).catch(()=>{});
+  // fetch USD rate with multiple fallbacks
+  async function fetchUSDRate(){
+    const apis=[
+      'https://api.exchangerate-api.com/v4/latest/USD',
+      'https://open.er-api.com/v6/latest/USD',
+      'https://api.frankfurter.app/latest?from=USD&to=ILS',
+    ];
+    for(const api of apis){
+      try{
+        const r=await fetch(api);
+        const d=await r.json();
+        const rate=d.rates?.ILS||d.conversion_rates?.ILS;
+        if(rate&&rate>0&&rate<10){
+          usd=parseFloat(rate.toFixed(4));
+          localStorage.setItem('hofesh-usd',usd);
+          localStorage.setItem('hofesh-usd-time',Date.now());
+          document.querySelectorAll('.usd-rate-display').forEach(el=>{
+            el.textContent='$1 = ₪'+usd.toFixed(2);
+          });
+          return;
+        }
+      }catch(e){}
+    }
+  }
+  // Only fetch if cache is older than 1 hour
+  const lastFetch=parseInt(localStorage.getItem('hofesh-usd-time')||'0');
+  if(Date.now()-lastFetch>3600000||usd===3.70){
+    fetchUSDRate();
+  } else {
+    document.querySelectorAll('.usd-rate-display').forEach(el=>{
+      el.textContent='$1 = ₪'+usd.toFixed(2);
+    });
+  }
 }
 
 // ════ REALTIME SYNC ════
@@ -1839,14 +1862,16 @@ function renderBalance(){
   if(C('fr-num-stats'))C('fr-num-stats').textContent=freeM>99?'99+':freeM;
   if(C('fr-sub-stats'))C('fr-sub-stats').textContent='חודשים של חופש כלכלי'+(freeM>=12?' 🎉':'');
   if(C('fr-bar-stats'))C('fr-bar-stats').style.width=Math.min(100,freeM/24*100)+'%';
-  // Also show freedom number on home as a small badge
-  const freeHome=C('home-freedom-num');
-  if(freeHome)freeHome.textContent=freeM>99?'99+':freeM;
+
   // update home date
   const dateEl=C('home-date');
   if(dateEl){
+    // Show full date if current month, else show selected month context
     const now=new Date();
-    dateEl.textContent=now.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const isCurrentMonth=(cM===now.getMonth()&&cY===now.getFullYear());
+    dateEl.textContent=isCurrentMonth
+      ? now.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})
+      : `סה"כ ל${MHE[cM]} ${cY}`;
   }
 }
 
@@ -1871,7 +1896,12 @@ function renderInvPortfolio(){
   const total=invs.reduce((s,t)=>s+t.amount,0);
   C('inv-total').textContent='סה"כ: ₪'+fmt(total);
   const groups={};
-  invs.forEach(t=>{const k=t.description||t.category;(groups[k]=groups[k]||[]).push(t);});
+  invs.forEach(t=>{
+    // Strip dollar amounts from description for grouping: "S&P ($1154)" -> "S&P"
+    const raw=t.description||t.category;
+    const k=raw.replace(/\s*\(\$[\d.]+\)\s*/g,'').trim()||t.category;
+    (groups[k]=groups[k]||[]).push(t);
+  });
   C('inv-list').innerHTML=Object.entries(groups).map(([n,items])=>{
     const sum=items.reduce((s,t)=>s+t.amount,0);
     return `<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:.5px solid var(--b1)">
@@ -1933,8 +1963,8 @@ function renderPie(data){
   C('pie-leg').innerHTML=data.slice(0,6).map(d=>`<div class="pie-row"><div class="pie-dot" style="background:${d.c}"></div><div class="pie-name">${d.n}</div><div class="pie-pct" style="color:${d.c}">${Math.round(d.v/total*100)}%</div></div>`).join('');
 }
 
-function getInsights(){
-  const mt=mTxs(),wt=wTxs(),ins=[];
+function getInsights(pt){
+  const mt=pt||mTxs(),wt=wTxs(),ins=[];
   const exp=sumT(mt,'expense'),inc=sumT(mt,'income');
   const lmt=mTxs(cM===0?11:cM-1,cM===0?cY-1:cY),lexp=sumT(lmt,'expense');
   if(lexp>0){const d=Math.round((exp-lexp)/lexp*100);if(d>15)ins.push({i:'📈',t:`הוצאת ${d}% יותר מהחודש הקודם`,k:'warn'});else if(d<-10)ins.push({i:'📉',t:`הוצאת ${Math.abs(d)}% פחות 💪`,k:'good'});}
@@ -1988,7 +2018,7 @@ function renderStats(){
     const mx=Math.max(...bars.map(b=>Math.max(b.i,b.e)),1);
     C('stat-bars').innerHTML=bars.map(b=>`<div class="bw" style="gap:.12rem"><div style="display:flex;gap:2px;align-items:flex-end;height:78px;width:100%"><div style="flex:1;background:rgba(48,209,88,.12);border-radius:4px 4px 0 0;display:flex;align-items:flex-end"><div style="width:100%;background:var(--grn);border-radius:4px 4px 0 0;height:${b.i/mx*100}%;min-height:${b.i?2:0}px;transition:height .5s"></div></div><div style="flex:1;background:rgba(255,69,58,.12);border-radius:4px 4px 0 0;display:flex;align-items:flex-end"><div style="width:100%;background:var(--red);border-radius:4px 4px 0 0;height:${b.e/mx*100}%;min-height:${b.e?2:0}px;transition:height .5s"></div></div></div><div class="blbl">${b.l}</div></div>`).join('');
   }
-  C('insights').innerHTML=getInsights().map(ins=>`<div class="ins" style="background:${ins.k==='good'?'var(--grn-d)':ins.k==='warn'?'var(--red-d)':'var(--s1)'};border:.5px solid ${ins.k==='good'?'var(--grn-b)':ins.k==='warn'?'var(--red-b)':'var(--b1)'}"><span class="ins-ico">${ins.i}</span><span class="ins-txt" style="color:${ins.k==='good'?'var(--grn)':ins.k==='warn'?'var(--red)':'var(--txt2)'}">${ins.t}</span></div>`).join('');
+  C('insights').innerHTML=getInsights(pt).map(ins=>`<div class="ins" style="background:${ins.k==='good'?'var(--grn-d)':ins.k==='warn'?'var(--red-d)':'var(--s1)'};border:.5px solid ${ins.k==='good'?'var(--grn-b)':ins.k==='warn'?'var(--red-b)':'var(--b1)'}"><span class="ins-ico">${ins.i}</span><span class="ins-txt" style="color:${ins.k==='good'?'var(--grn)':ins.k==='warn'?'var(--red)':'var(--txt2)'}">${ins.t}</span></div>`).join('');
 }
 
 function renderHistory(){
@@ -2035,7 +2065,7 @@ function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
   renderBalance();renderHomeGoals();renderWeekBars();
   renderInvPortfolio();renderBudget();renderHomeTxs();
-  renderBudget();renderStats();renderHistory();renderGoals();
+  renderStats();renderHistory();renderGoals();
   if(C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
@@ -2193,7 +2223,12 @@ function renderInvestTab(){
 
   // Group by description
   const groups={};
-  invs.forEach(t=>{const k=t.description||t.category;(groups[k]=groups[k]||[]).push(t);});
+  invs.forEach(t=>{
+    // Strip dollar amounts from description for grouping: "S&P ($1154)" -> "S&P"
+    const raw=t.description||t.category;
+    const k=raw.replace(/\s*\(\$[\d.]+\)\s*/g,'').trim()||t.category;
+    (groups[k]=groups[k]||[]).push(t);
+  });
   const sorted=Object.entries(groups).sort((a,b)=>b[1].reduce((s,t)=>s+t.amount,0)-a[1].reduce((s,t)=>s+t.amount,0));
 
   if(list)list.innerHTML=sorted.map(([name,items])=>{
@@ -2270,8 +2305,10 @@ const TIPS=[
 ];
 
 function getDailyTip(){
-  const day=Math.floor(Date.now()/86400000);
-  return TIPS[day%TIPS.length];
+  try{
+    const day=Math.floor(Date.now()/86400000);
+    return TIPS[day%TIPS.length]||TIPS[0];
+  }catch(e){return 'נהל את הכסף שלך בחכמה 💚';}
 }
 
 // ════ NEW: CHANGE NAME ════
