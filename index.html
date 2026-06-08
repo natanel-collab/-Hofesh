@@ -1942,10 +1942,16 @@ async function addTx(){
 
 // ════ EDIT TX ════
 function openEdit(id){
-  const t=txs.find(x=>x.id===id);if(!t)return;
-  C('e-id').value=id;C('e-amt').value=t.amount;
-  C('e-desc').value=t.description||'';C('e-cat').value=t.category;
-  setET(t.type);C('ov-edit').classList.add('on');
+  const t=txs.find(x=>String(x.id)===String(id));
+  if(!t){toast('עסקה לא נמצאה');return;}
+  C('e-id').value=id;
+  C('e-amt').value=t.amount;
+  C('e-desc').value=t.description||'';
+  C('e-cat').value=t.category;
+  setET(t.type);
+  C('ov-edit').classList.add('on');
+  // Close swipe action bar
+  C('txw-'+id)?.classList.remove('sw');
 }
 function setET(t){
   eType=t;const map={expense:'exp',income:'inc',invest:'inv'};
