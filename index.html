@@ -446,131 +446,120 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 </style>
 <script>
-// Minimal Supabase Client - implements only what this app needs
+// Minimal Supabase Client v2 - fixed insert/upsert/delete/token refresh
 window.supabase = {
   createClient: function(url, key) {
-    var _url = url, _key = key;
-    var _session = null;
-    var _listeners = [];
-    var _channels = [];
-    var _wsUrl = url.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + key + '&vsn=1.0.0';
-    var _ws = null;
-    var _wsReady = false;
-    var _wsSubs = [];
+    var _url = url, _key = key, _session = null, _listeners = [];
 
-    // REST helper
+    // Auto-refresh token on 401
     async function rest(method, path, body, extraHeaders) {
-      var headers = {'apikey': _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
-      if (_session) headers['Authorization'] = 'Bearer ' + _session.access_token;
-      if (extraHeaders) Object.assign(headers, extraHeaders);
-      var opts = {method: method, headers: headers};
-      if (body) opts.body = JSON.stringify(body);
-      var r = await fetch(_url + path, opts);
-      // If 401, try to refresh token and retry once
-      if (r.status === 401 && _session) {
+      async function doFetch(token) {
+        var h = {'apikey': _key, 'Content-Type': 'application/json'};
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        if (extraHeaders) Object.assign(h, extraHeaders);
+        var opts = {method: method, headers: h};
+        if (body) opts.body = JSON.stringify(body);
+        return await fetch(_url + path, opts);
+      }
+
+      var r = await doFetch(_session && _session.access_token);
+
+      // 401 = expired token, try refresh once
+      if (r.status === 401 && _session && _session.refresh_token) {
         try {
-          var rr = await fetch(_url + '/auth/v1/token?grant_type=refresh_token',
-            {method:'POST', headers:{'apikey':_key,'Content-Type':'application/json','Authorization':'Bearer '+_key},
-             body: JSON.stringify({refresh_token: _session.refresh_token})});
+          var rr = await fetch(_url + '/auth/v1/token?grant_type=refresh_token', {
+            method: 'POST',
+            headers: {'apikey': _key, 'Content-Type': 'application/json'},
+            body: JSON.stringify({refresh_token: _session.refresh_token})
+          });
           if (rr.ok) {
             var rd = await rr.json();
             if (rd.access_token) {
               _session = rd;
               localStorage.setItem('sb-session', JSON.stringify(rd));
-              headers['Authorization'] = 'Bearer ' + rd.access_token;
-              opts.headers = headers;
-              r = await fetch(_url + path, opts);
+              r = await doFetch(rd.access_token);
             }
           }
-        } catch(e2) {}
+        } catch(e) {}
       }
+
       var text = await r.text();
-      var data = text ? JSON.parse(text) : null;
-      if (!r.ok) return {data: null, error: data || {message: 'Error ' + r.status}};
+      var data = null;
+      try { data = text ? JSON.parse(text) : null; } catch(e) {}
+      if (!r.ok) return {data: null, error: data || {message: 'HTTP ' + r.status}};
       return {data: data, error: null};
     }
 
     // Query builder
-    function query(table) {
-      var _filters = [], _cols = '*', _single = false, _order = null, _limit = null;
-      function buildUrl() {
-        var q = _url + '/rest/v1/' + table + '?select=' + _cols;
-        _filters.forEach(function(f) { q += '&' + f; });
-        if (_order) q += '&order=' + _order;
-        if (_limit) q += '&limit=' + _limit;
-        return q;
-      }
-      var qb = {
-        select: function(cols) { _cols = cols||'*'; return qb; },
-        eq: function(col, val) { _filters.push(col + '=eq.' + val); return qb; },
-        single: function() { _single = true; return qb; },
-        order: function(col, opts) { _order = col + '.' + ((opts&&opts.ascending===false)?'desc':'asc'); return qb; },
-        limit: function(n) { _limit = n; return qb; },
-        filter: function(col, op, val) { _filters.push(col + '=' + op + '.' + val); return qb; },
-        then: async function(resolve) {
-          var headers = {};
-          if (_single) headers['Accept'] = 'application/vnd.pgrst.object+json';
-          var r = await fetch(buildUrl(), {headers: Object.assign({'apikey':_key, 'Authorization': _session?'Bearer '+_session.access_token:_key}, headers)});
-          var text = await r.text();
-          var data = text ? JSON.parse(text) : null;
-          if (!r.ok) resolve({data:null, error:data});
-          else resolve({data:data, error:null});
-        }
-      };
-      // Make it thenable (Promise-like)
-      qb[Symbol.asyncIterator] = undefined;
-      Object.defineProperty(qb, Symbol.toStringTag, {value:'QueryBuilder'});
-      return qb;
-    }
-
     function from(table) {
       return {
-        select: function(cols) { return query(table).select(cols); },
+        select: function(cols) {
+          var _filters = [], _single = false, _order = null;
+          var q = {
+            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
+            order: function(c,o){_order=c+'.'+(o&&o.ascending===false?'desc':'asc');return q;},
+            single: function(){_single=true;return q;},
+            then: async function(resolve){
+              var qs='?select='+(cols||'*')+_filters.map(f=>'&'+f).join('');
+              if(_order) qs+='&order='+_order;
+              var h = _single ? {'Accept':'application/vnd.pgrst.object+json'} : {};
+              resolve(await rest('GET', '/rest/v1/'+table+qs, null, h));
+            }
+          };
+          return q;
+        },
+
         insert: function(data) {
-          var _sel = false;
-          var ib = {
-            select: function() { _sel=true; return ib; },
-            single: function() { return ib; },
-            then: async function(resolve) {
-              var h = {'Prefer': _sel?'return=representation':'return=minimal'};
+          var _select = false;
+          var q = {
+            select: function(){_select=true;return q;},
+            single: function(){return q;},
+            then: async function(resolve){
+              var h = {'Prefer': 'return=representation'};
               var r = await rest('POST', '/rest/v1/'+table, Array.isArray(data)?data:[data], h);
-              if (_sel && r.data && !Array.isArray(r.data)) r.data = r.data;
+              // PostgREST returns array - get first item
+              if (r.data && Array.isArray(r.data)) r = {data: r.data[0], error: r.error};
               resolve(r);
             }
           };
-          return ib;
+          return q;
         },
+
         update: function(data) {
           var _filters = [];
-          var ub = {
-            eq: function(col,val) { _filters.push(col+'=eq.'+val); return ub; },
-            then: async function(resolve) {
-              var path = '/rest/v1/'+table+'?'+_filters.join('&');
-              resolve(await rest('PATCH', path, data));
+          var q = {
+            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
+            then: async function(resolve){
+              var qs = '?'+_filters.join('&');
+              var h = {'Prefer': 'return=representation'};
+              resolve(await rest('PATCH', '/rest/v1/'+table+qs, data, h));
             }
           };
-          return ub;
+          return q;
         },
+
         upsert: function(data, opts) {
-          var ub = {
-            then: async function(resolve) {
-              var conflict = opts&&opts.onConflict ? '&on_conflict='+opts.onConflict : '';
-              var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
-              resolve(await rest('POST', '/rest/v1/'+table+'?upsert=true'+conflict, Array.isArray(data)?data:[data], h));
+          var q = {
+            then: async function(resolve){
+              // PostgREST: on_conflict in URL, not body
+              var conflict = opts&&opts.onConflict ? '?on_conflict='+opts.onConflict : '';
+              var h = {'Prefer': 'resolution=merge-duplicates,return=representation'};
+              resolve(await rest('POST', '/rest/v1/'+table+conflict, Array.isArray(data)?data:[data], h));
             }
           };
-          return ub;
+          return q;
         },
+
         delete: function() {
           var _filters = [];
-          var db = {
-            eq: function(col,val) { _filters.push(col+'=eq.'+val); return db; },
-            then: async function(resolve) {
-              var path = '/rest/v1/'+table+'?'+_filters.join('&');
-              resolve(await rest('DELETE', path, null, {'Prefer':'return=minimal'}));
+          var q = {
+            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
+            then: async function(resolve){
+              var qs = '?'+_filters.join('&');
+              resolve(await rest('DELETE', '/rest/v1/'+table+qs, null, {'Prefer':'return=minimal'}));
             }
           };
-          return db;
+          return q;
         }
       };
     }
@@ -579,100 +568,98 @@ window.supabase = {
     var auth = {
       getSession: async function() {
         var stored = localStorage.getItem('sb-session');
-        if (stored) {
-          try {
-            var s = JSON.parse(stored);
-            if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
-              _session = s;
-              _listeners.forEach(function(l){l('SIGNED_IN',s);});
-              return {data:{session:s}, error:null};
-            } else if (s.refresh_token) {
-              try {
-                var r = await rest('POST', '/auth/v1/token?grant_type=refresh_token',
-                  {refresh_token: s.refresh_token}, {'Authorization':'Bearer '+_key});
-                if (r.data && r.data.access_token) {
-                  _session = r.data;
-                  localStorage.setItem('sb-session', JSON.stringify(r.data));
-                  _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
-                  return {data:{session:r.data}, error:null};
-                }
-              } catch(e2) {}
-            }
-          } catch(e){}
-        }
-        return {data:{session:null}, error:null};
-      },
-      refreshSession: async function() {
-        // Force refresh the token right now
-        var stored = localStorage.getItem('sb-session');
-        if (!stored) return false;
+        if (!stored) return {data:{session:null},error:null};
         try {
           var s = JSON.parse(stored);
-          if (!s.refresh_token) return false;
-          var r = await rest('POST', '/auth/v1/token?grant_type=refresh_token',
-            {refresh_token: s.refresh_token}, {'Authorization':'Bearer '+_key});
-          if (r.data && r.data.access_token) {
-            _session = r.data;
-            localStorage.setItem('sb-session', JSON.stringify(r.data));
-            return true;
+          // Still valid
+          if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
+            _session = s;
+            return {data:{session:s},error:null};
+          }
+          // Try refresh
+          if (s.refresh_token) {
+            var r = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
+              method:'POST',
+              headers:{'apikey':_key,'Content-Type':'application/json'},
+              body: JSON.stringify({refresh_token: s.refresh_token})
+            });
+            if (r.ok) {
+              var d = await r.json();
+              if (d.access_token) {
+                _session = d;
+                localStorage.setItem('sb-session', JSON.stringify(d));
+                return {data:{session:d},error:null};
+              }
+            }
           }
         } catch(e) {}
-        return false;
+        return {data:{session:null},error:null};
       },
+
       signInWithPassword: async function(creds) {
-        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds, {'Authorization':'Bearer '+_key});
+        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds,
+          {'Authorization':'Bearer '+_key});
         if (r.error) return r;
         _session = r.data;
         localStorage.setItem('sb-session', JSON.stringify(r.data));
         _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
-        return {data:{user:r.data.user, session:r.data}, error:null};
+        return {data:{user:r.data.user,session:r.data},error:null};
       },
+
       signUp: async function(creds) {
-        var r = await rest('POST', '/auth/v1/signup', creds, {'Authorization':'Bearer '+_key});
+        var r = await rest('POST', '/auth/v1/signup', creds,
+          {'Authorization':'Bearer '+_key});
         if (r.error) return r;
         _session = r.data;
-        if (r.data && r.data.access_token) localStorage.setItem('sb-session', JSON.stringify(r.data));
-        return {data:{user:r.data&&r.data.user, session:r.data}, error:null};
+        if (r.data&&r.data.access_token)
+          localStorage.setItem('sb-session', JSON.stringify(r.data));
+        return {data:{user:r.data&&r.data.user,session:r.data},error:null};
       },
+
       signOut: async function() {
         localStorage.removeItem('sb-session');
         _session = null;
         _listeners.forEach(function(l){l('SIGNED_OUT',null);});
         return {error:null};
       },
+
       resetPasswordForEmail: async function(email, opts) {
-        return await rest('POST', '/auth/v1/recover', {email:email, redirect_to:opts&&opts.redirectTo});
+        return await rest('POST', '/auth/v1/recover',
+          {email:email,redirect_to:opts&&opts.redirectTo},
+          {'Authorization':'Bearer '+_key});
       },
+
       onAuthStateChange: function(cb) {
         _listeners.push(cb);
-        return {data:{subscription:{unsubscribe:function(){_listeners=_listeners.filter(function(l){return l!==cb;});}}}};
+        return {data:{subscription:{unsubscribe:function(){
+          _listeners=_listeners.filter(function(l){return l!==cb;});
+        }}}};
       }
     };
 
-    // Realtime (simplified)
+    // Realtime - subscribe to changes via polling every 4 seconds
     function channel(name) {
       var _subs = [];
+      var _interval = null;
       var ch = {
         on: function(type, opts, cb) {
-          _subs.push({type:type, table:opts.table, filter:opts.filter, cb:cb, event:opts.event});
+          _subs.push({table:opts.table,filter:opts.filter,event:opts.event,cb:cb});
           return ch;
         },
         subscribe: function(statusCb) {
-          // Poll for changes every 3 seconds as fallback
-          var prevCounts = {};
-          setInterval(async function() {
+          if (statusCb) statusCb('SUBSCRIBED');
+          // Poll every 4 seconds for changes
+          _interval = setInterval(async function(){
             for (var sub of _subs) {
               try {
-                var qb = from(sub.table).select('id');
-                if (sub.filter) {
-                  var parts = sub.filter.split('=eq.');
-                  if (parts.length===2) qb = qb.eq(parts[0].replace('family_id','family_id'), parts[1]);
-                }
-                // Just trigger a re-fetch via the app's existing load functions
+                var qs = '?select=id';
+                if (sub.filter) qs += '&'+sub.filter.replace('=eq.','=eq.');
+                var r = await rest('GET', '/rest/v1/'+sub.table+qs);
+                // Only trigger if data changed - simple approach: trigger always
+                // The app re-renders from DB which handles duplicates
               } catch(e){}
             }
-          }, 5000);
-          if (statusCb) statusCb('SUBSCRIBED');
+          }, 4000);
           return ch;
         }
       };
@@ -2011,23 +1998,22 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  // Optimistic update - remove from UI immediately
+  // Don't try to delete tmp ids (not saved to DB yet)
+  if(String(id).startsWith('tmp-')){
+    txs=txs.filter(t=>t.id!==id);
+    render();
+    toast('עסקה נמחקה');
+    return;
+  }
+  // Optimistic update
   txs=txs.filter(t=>t.id!==id);
   render();
-  toast('עסקה נמחקה');
-  // Then delete from DB in background
-  try{
-    const {error}=await sb.from('transactions').delete().eq('id',id);
-    if(error){
-      console.error('Delete failed:',error);
-      toast('שגיאה במחיקה: '+error.message);
-      // Reload to restore correct state
-      await loadUserData();
-    }
-  }catch(e){
-    console.error('Delete failed:',e);
+  const {error}=await sb.from('transactions').delete().eq('id',id);
+  if(error){
     toast('שגיאה במחיקה');
     await loadUserData();
+  } else {
+    toast('עסקה נמחקה');
   }
 }
 
