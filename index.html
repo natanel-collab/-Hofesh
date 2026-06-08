@@ -25,6 +25,20 @@
 /* Hide invest tab */
 #tb-invest{display:none!important}
 
+/* Goal celebration */
+.celebrate-ov{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s}
+.celebrate-ov.on{opacity:1;pointer-events:all}
+.celebrate-box{background:linear-gradient(135deg,rgba(48,209,88,0.15),rgba(10,132,255,0.1));border:1px solid rgba(255,255,255,0.15);border-radius:24px;padding:2rem 1.5rem;text-align:center;max-width:300px;transform:scale(0.5);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.celebrate-ov.on .celebrate-box{transform:scale(1)}
+.celebrate-emoji{font-size:4rem;margin-bottom:.5rem;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.confetti{position:absolute;width:10px;height:10px;pointer-events:none;animation:confetti-fall 2.5s ease-out forwards}
+@keyframes confetti-fall{
+  0%{transform:translateY(0) rotate(0);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+}
+
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 /* ══ THEMES ══ */
@@ -1116,6 +1130,16 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button onclick="saveCash()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--ylw);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
   </div></div>
 
+  <!-- CELEBRATION -->
+  <div class="celebrate-ov" id="celebrate-ov" onclick="C('celebrate-ov').classList.remove('on')">
+    <div class="celebrate-box">
+      <div class="celebrate-emoji">🎉</div>
+      <div id="celebrate-title" style="font-size:1.3rem;font-weight:800;color:var(--grn);margin-bottom:.4rem">יעד הושג!</div>
+      <div id="celebrate-sub" style="font-size:.9rem;color:var(--txt2);margin-bottom:1rem">כל הכבוד</div>
+      <button onclick="C('celebrate-ov').classList.remove('on')" style="background:var(--grn);color:#000;border:none;border-radius:12px;padding:.7rem 2rem;font-weight:700;font-family:inherit;cursor:pointer;font-size:.9rem">מעולה</button>
+    </div>
+  </div>
+
   <!-- PROFILE -->
   <div class="ov" id="ov-profile" onclick="if(event.target===this)C('ov-profile').classList.remove('on')">
   <div class="sheet">
@@ -2135,6 +2159,26 @@ function editGoalSaved(id){
   C('gp-inp').value=g.saved||0;C('gp-sub').style.background='var(--blu)';C('gp-sub').textContent='עדכן';
   C('ov-gp').classList.add('on');setTimeout(()=>C('gp-inp').focus(),320);
 }
+function celebrateGoal(goalName){
+  C('celebrate-title').textContent='יעד הושג! 🎯';
+  C('celebrate-sub').textContent=goalName;
+  C('celebrate-ov').classList.add('on');
+  // Shoot confetti
+  const colors=['#30d158','#0a84ff','#ffd60a','#ff9f0a','#bf5af2','#ff453a'];
+  const box=C('celebrate-ov');
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.left=Math.random()*100+'%';
+    c.style.top='-20px';
+    c.style.animationDelay=(Math.random()*0.5)+'s';
+    c.style.animationDuration=(2+Math.random()*1)+'s';
+    box.appendChild(c);
+    setTimeout(()=>c.remove(),3500);
+  }
+}
+
 async function saveGoalProgress(){
   const amt=parseFloat(C('gp-inp').value);
   if(isNaN(amt)){toast('הכנס סכום');return;}
@@ -2144,10 +2188,16 @@ async function saveGoalProgress(){
   const {error}=await sb.from('goals').update({saved:newSaved,history:hist}).eq('id',_gpId);
   if(error){toast('שגיאה: '+error.message);return;}
   const gi=goals.findIndex(x=>String(x.id)===String(_gpId));
+  const wasNotReached=(g.saved||0)<g.target;
+  const nowReached=newSaved>=g.target;
   if(gi>-1){goals[gi].saved=newSaved;goals[gi].history=hist;}
   C('ov-gp').classList.remove('on');
   render();
-  toast(_gpMode==='add'?(amt>0?`+₪${fmt(amt)} נוסף ✓`:`₪${fmt(Math.abs(amt))} הופחת`):'יתרה עודכנה ✓');
+  if(wasNotReached&&nowReached){
+    setTimeout(()=>celebrateGoal(g.name),400);
+  } else {
+    toast(_gpMode==='add'?(amt>0?`+₪${fmt(amt)} נוסף ✓`:`₪${fmt(Math.abs(amt))} הופחת`):'יתרה עודכנה ✓');
+  }
 }
 
 // ════ PROFILE ════
