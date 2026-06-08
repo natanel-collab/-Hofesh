@@ -22,6 +22,9 @@
   ]
 }">
 <style>
+/* Hide invest tab */
+#tb-invest{display:none!important}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 /* ══ THEMES ══ */
@@ -932,7 +935,188 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       </div>
     </div></div>
 
-    <!-- PROFILE -->
+    <!-- INVEST -->
+    <div class="view" id="v-invest"><div class="page">
+      <div class="glass" style="padding:.6rem .9rem;margin-bottom:.65rem;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.75rem;color:var(--txt2)">שער דולר עדכני</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--grn)" id="inv-usd-rate" class="usd-rate-display">טוען...</div>
+      </div>
+      <div class="card glass" id="inv-summary-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <div class="card-head" style="margin-bottom:0">📈 תיק השקעות</div>
+          <div>
+          <div style="font-size:.88rem;font-weight:700;color:var(--pur)" id="inv-total-val">₪0</div>
+          <div style="font-size:.7rem;color:var(--txt2)" id="inv-usd-eq">≈ $0</div>
+        </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.85rem">
+          <div style="flex:1;background:var(--pur-d);border:1px solid rgba(191,90,242,0.2);border-radius:10px;padding:.6rem .7rem">
+            <div style="font-size:.62rem;color:var(--pur);margin-bottom:.18rem">סה"כ השקעות</div>
+            <div style="font-size:.9rem;font-weight:700;color:var(--pur)" id="inv-total-amt">₪0</div>
+          </div>
+          <div style="flex:1;background:rgba(48,209,88,0.08);border:1px solid var(--grn-b);border-radius:10px;padding:.6rem .7rem">
+            <div style="font-size:.62rem;color:var(--grn);margin-bottom:.18rem">% מהתיק הכולל</div>
+            <div style="font-size:.9rem;font-weight:700;color:var(--grn)" id="inv-pct-of-total">0%</div>
+          </div>
+        </div>
+        <div id="inv-pie-wrap" class="pie-wrap">
+          <svg id="inv-pie" width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0"></svg>
+          <div class="pie-leg" id="inv-pie-leg"></div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-head">📊 גרף השקעות לאורך זמן</div>
+        <div class="bars" id="inv-bars"></div>
+      </div>
+
+      <div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+        color:var(--txt3);margin-bottom:.5rem">נכסים בתיק</div>
+      <div id="inv-assets-list"></div>
+      <div class="empty" id="inv-empty" style="display:none">
+        <div class="empty-ico">📈</div>
+        <div class="empty-txt">אין השקעות עדיין<br>לחץ + והוסף השקעה</div>
+      </div>
+    </div></div>
+
+  </div><!-- /scroll -->
+
+  <button id="fab" onclick="openAdd()">＋</button>
+
+  <div id="tabbar">
+    <button class="tab-btn on" id="tb-home" onclick="goTab('home')"><span class="ti">🏠</span><span class="tl">ראשי</span></button>
+    <button class="tab-btn" id="tb-stats" onclick="goTab('stats')"><span class="ti">📊</span><span class="tl">סטטיסטיקה</span></button>
+    <button class="tab-btn" id="tb-history" onclick="goTab('history')"><span class="ti">📋</span><span class="tl">עסקאות</span></button>
+    <button class="tab-btn" id="tb-invest" onclick="goTab('invest')"><span class="ti">📈</span><span class="tl">השקעות</span></button>
+    <button class="tab-btn" id="tb-goals" onclick="goTab('goals')"><span class="ti">🎯</span><span class="tl">יעדים</span></button>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- ADD TX -->
+  <div class="ov" id="ov-add" onclick="if(event.target===this)closeAdd()">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">הוספת עסקה</div>
+    <div class="ttog">
+      <button class="ttog-btn on exp" id="at-exp" onclick="setAT('expense')">הוצאה</button>
+      <button class="ttog-btn inc" id="at-inc" onclick="setAT('income')">הכנסה</button>
+      <button class="ttog-btn inv" id="at-inv" onclick="setAT('invest')">השקעה</button>
+    </div>
+    <div class="cur-row" id="cur-row">
+      <button class="cur-btn" id="cur-ils" onclick="setCur('ILS')" style="background:var(--grn);color:#000">₪ שקל</button>
+      <button class="cur-btn" id="cur-usd" onclick="setCur('USD')" style="background:var(--surface);color:var(--txt2)">$ דולר</button>
+      <div style="font-size:.65rem;color:var(--txt3);padding:0 .3rem;white-space:nowrap" id="cur-rate" class="usd-rate-display">$1 = ₪3.70</div>
+    </div>
+    <div id="usd-convert-display" style="display:none;text-align:center;font-size:.78rem;color:var(--grn);margin-bottom:.5rem;font-weight:600"></div>
+    <div class="amt-wrap" onclick="C('a-amt').focus()">
+      <div class="amt-cur" id="a-cur-sign">₪</div>
+      <input class="amt-inp" id="a-amt" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"
+        oninput="aAmt=this.value||'0';const uc=C('usd-convert-display');if(uc&&aCur==='USD'&&aType==='invest'){const r=parseFloat(aAmt)||0;uc.style.display=r>0?'block':'none';if(r>0)uc.textContent='$'+r+' = ₪'+fmt((r*usd).toFixed(0))+' (שער '+usd.toFixed(2)+')';}" onkeydown="if(event.key==='Enter')C('a-desc').focus()">
+    </div>
+    <div class="field"><span class="fi">📝</span><input type="text" id="a-desc" placeholder="תיאור" maxlength="40"></div>
+    <div class="field"><span class="fi">📅</span>
+      <input type="date" id="a-date" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.85rem;font-family:inherit;direction:ltr;color-scheme:dark"></div>
+    <div class="field"><span class="fi">🏷️</span>
+      <select id="a-cat">
+        <option value="מזון">🍔 מזון</option><option value="תחבורה">🚗 תחבורה</option>
+        <option value="בידור">🎬 בידור</option><option value="קניות">🛍️ קניות</option>
+        <option value="בריאות">💊 בריאות</option><option value="שכירות">🏠 שכירות</option>
+        <option value="חשמל/מים">💡 חשמל/מים</option><option value="השקעות">📈 השקעות</option>
+        <option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
+      </select></div>
+    <div class="npad">
+      <button class="nkey" onclick="nk('7')">7</button><button class="nkey" onclick="nk('8')">8</button><button class="nkey" onclick="nk('9')">9</button>
+      <button class="nkey" onclick="nk('4')">4</button><button class="nkey" onclick="nk('5')">5</button><button class="nkey" onclick="nk('6')">6</button>
+      <button class="nkey" onclick="nk('1')">1</button><button class="nkey" onclick="nk('2')">2</button><button class="nkey" onclick="nk('3')">3</button>
+      <button class="nkey" onclick="nk('.')">.</button><button class="nkey" onclick="nk('0')">0</button><button class="nkey" onclick="nk('del')">⌫</button>
+    </div>
+    <button class="sub exp" id="a-sub" onclick="addTx()">הוסף הוצאה</button>
+  </div></div>
+
+  <!-- EDIT TX -->
+  <div class="ov" id="ov-edit" onclick="if(event.target===this)C('ov-edit').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">עריכת עסקה</div>
+    <input type="hidden" id="e-id">
+    <div class="ttog">
+      <button class="ttog-btn on exp" id="et-exp" onclick="setET('expense')">הוצאה</button>
+      <button class="ttog-btn inc" id="et-inc" onclick="setET('income')">הכנסה</button>
+      <button class="ttog-btn inv" id="et-inv" onclick="setET('invest')">השקעה</button>
+    </div>
+    <div class="field"><span class="fi">💰</span>
+      <input type="number" id="e-amt" placeholder="סכום" min="0" step="0.01"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">📝</span>
+      <input type="text" id="e-desc" placeholder="תיאור" maxlength="40"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">🏷️</span>
+      <select id="e-cat" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl">
+        <option value="מזון">🍔 מזון</option><option value="תחבורה">🚗 תחבורה</option>
+        <option value="בידור">🎬 בידור</option><option value="קניות">🛍️ קניות</option>
+        <option value="בריאות">💊 בריאות</option><option value="שכירות">🏠 שכירות</option>
+        <option value="חשמל/מים">💡 חשמל/מים</option><option value="השקעות">📈 השקעות</option>
+        <option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
+      </select></div>
+    <div style="display:flex;gap:.5rem;margin-top:.35rem">
+      <button onclick="saveEdit()" style="flex:1;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.9rem;font-weight:700;border:none;cursor:pointer">שמור</button>
+      <button onclick="C('ov-edit').classList.remove('on')" style="padding:.85rem 1rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.85rem;cursor:pointer">ביטול</button>
+    </div>
+  </div></div>
+
+  <!-- OB MODAL -->
+  <div class="ov" id="ov-ob" onclick="if(event.target===this)C('ov-ob').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">עדכון יתרה</div>
+    <div id="ob-info" style="background:var(--surface);border-radius:10px;padding:.65rem .9rem;font-size:.75rem;color:var(--txt2);margin-bottom:.7rem"></div>
+    <div class="field"><span class="fi">💰</span>
+      <input type="number" id="ob-inp" placeholder="יתרת פתיחה" min="0" step="1"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
+    <button onclick="saveOb()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
+    <div id="ob-real-wrap" style="display:none;align-items:center;gap:.6rem;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:.7rem .85rem;margin-top:.4rem">
+      <span style="font-size:.9rem">🏦</span>
+      <input type="number" id="ob-real" placeholder="כמה יש לך עכשיו בבנק? (₪)"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.85rem;font-family:inherit;direction:rtl"
+        onkeydown="if(event.key==='Enter')setRealBalance()">
+    </div>
+    <button onclick="setRealBalance()" style="width:100%;margin-top:.4rem;padding:.72rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.8rem;cursor:pointer">⟳ חשב לפי יתרה אמיתית בבנק</button>
+  </div></div>
+
+  <!-- GOAL MODAL -->
+  <div class="ov" id="ov-goal" onclick="if(event.target===this)C('ov-goal').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">יעד חיסכון חדש</div>
+    <div class="field"><span class="fi">🎯</span><input type="text" id="g-name" placeholder="שם היעד" maxlength="30" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">💰</span><input type="number" id="g-target" placeholder="סכום יעד" min="1" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">💵</span><input type="number" id="g-saved" placeholder="כבר חסכת (אופציונלי)" min="0" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">📅</span><input type="number" id="g-months" placeholder="בכמה חודשים?" min="1" style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <button onclick="saveGoal()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">הוסף יעד</button>
+  </div></div>
+
+  <!-- GOAL PROGRESS -->
+  <div class="ov" id="ov-gp" onclick="if(event.target===this)C('ov-gp').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title" id="gp-title">הוסף יתרה</div>
+    <div id="gp-label" style="font-size:.8rem;color:var(--txt2);text-align:center;margin-bottom:.75rem"></div>
+    <div class="field"><span class="fi">💰</span>
+      <input type="number" id="gp-inp" placeholder="סכום" step="0.01"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"
+        onkeydown="if(event.key==='Enter')saveGoalProgress()"></div>
+    <button id="gp-sub" onclick="saveGoalProgress()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
+    <button onclick="C('ov-gp').classList.remove('on')" style="width:100%;margin-top:.4rem;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
+  </div></div>
+
+  <!-- CASH MODAL -->
+  <div class="ov" id="ov-cash" onclick="if(event.target===this)C('ov-cash').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">💵 מזומן בהישג יד</div>
+    <p style="font-size:.82rem;color:var(--txt2);text-align:center;margin-bottom:.85rem;line-height:1.6">כמה מזומן יש לך פיזית — יתווסף ליתרה הכוללת</p>
+    <div class="field"><span class="fi">💵</span>
+      <input type="number" id="cash-inp" placeholder="סכום מזומן" min="0" step="1"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
+    <button onclick="saveCash()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--ylw);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
+  </div></div>
+
+  <!-- PROFILE -->
   <div class="ov" id="ov-profile" onclick="if(event.target===this)C('ov-profile').classList.remove('on')">
   <div class="sheet">
     <div class="sh-handle"></div>
@@ -2167,45 +2351,22 @@ function renderInvPortfolio(){
   const invs=txs.filter(t=>t.type==='invest');
   if(!invs.length){C('inv-card').style.display='none';return;}
   C('inv-card').style.display='block';
-  // Calculate totals - both NIS and USD
-  const totalNIS=invs.reduce((s,t)=>s+t.amount,0);
-  // Extract $ amounts from descriptions like "S&P ($1154)"
-  let totalUSD=0;
-  invs.forEach(t=>{
-    const m=(t.description||'').match(/\$([\d.]+)/);
-    if(m)totalUSD+=parseFloat(m[1]);
-  });
-  
-  // Show total with USD conversion if available
-  let totalText='סה"כ: ₪'+fmt(totalNIS);
-  if(totalUSD>0){
-    const usdValueNIS=totalUSD*usd;
-    totalText='₪'+fmt(totalNIS)+' • $'+fmt(totalUSD);
-  }
-  C('inv-total').textContent=totalText;
-  
-  // Group by name (strip $ part)
+  const total=invs.reduce((s,t)=>s+t.amount,0);
+  C('inv-total').textContent='סה"כ: ₪'+fmt(total);
   const groups={};
   invs.forEach(t=>{
+    // Strip dollar amounts from description for grouping: "S&P ($1154)" -> "S&P"
     const raw=t.description||t.category;
     const k=raw.replace(/\s*\(\$[\d.]+\)\s*/g,'').trim()||t.category;
-    if(!groups[k])groups[k]={nis:0,usd:0};
-    groups[k].nis+=t.amount;
-    const m=(t.description||'').match(/\$([\d.]+)/);
-    if(m)groups[k].usd+=parseFloat(m[1]);
+    (groups[k]=groups[k]||[]).push(t);
   });
-  
-  // Render breakdown
-  const items=Object.entries(groups).sort((a,b)=>b[1].nis-a[1].nis);
-  C('inv-breakdown').innerHTML=items.map(([name,v])=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;background:rgba(255,255,255,0.04);border-radius:10px;border:.5px solid rgba(255,255,255,0.06)">
-      <div style="font-size:.85rem;font-weight:600">${name}</div>
-      <div style="text-align:left">
-        <div style="font-size:.85rem;color:var(--grn);font-weight:700">₪${fmt(v.nis)}</div>
-        ${v.usd>0?`<div style="font-size:.7rem;color:var(--txt2)">$${fmt(v.usd)}</div>`:''}
-      </div>
-    </div>
-  `).join('');
+  C('inv-list').innerHTML=Object.entries(groups).map(([n,items])=>{
+    const sum=items.reduce((s,t)=>s+t.amount,0);
+    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:.5px solid var(--b1)">
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--pur-d);display:flex;align-items:center;justify-content:center;font-size:.85rem">📈</div>
+      <div style="flex:1"><div style="font-size:.8rem;font-weight:500">${n}</div><div style="font-size:.65rem;color:var(--txt2)">${Math.round(sum/total*100)}% מהתיק</div></div>
+      <div style="font-size:.85rem;font-weight:700;color:var(--pur)">₪${fmt(sum)}</div>
+    </div>`;}).join('');
 }
 
 function renderBudget(){
@@ -2370,6 +2531,7 @@ function render(){
   renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
   renderInvPortfolio();renderBudget();renderHomeTxs();
   renderStats();renderHistory();renderGoals();
+  if(C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
     el.textContent='$1 = ₪'+usd.toFixed(2);
@@ -2631,6 +2793,7 @@ function goTab(name){
   C('scroll').scrollTop=0;
   // Always re-render stats when switching to it
   if(name==='stats')renderStats();
+  else if(name==='invest')renderInvestTab();
   else if(name==='history')renderHistory();
   else if(name==='goals')renderGoals();
   else render();
