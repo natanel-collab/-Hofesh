@@ -1994,25 +1994,15 @@ async function delTx(id){
   };
   document.getElementById('debug-box')?.remove();
   dbg('1. delTx called, id='+id);
-  const before=txs.length;
-  txs=txs.filter(t=>String(t.id)!==String(id));
-  dbg('2. Filtered locally: '+(before-txs.length)+' removed');
-  render();
-  dbg('3. About to call DB delete...');
+  // SKIP local filter & render - go straight to DB
+  dbg('2. Calling DB delete now...');
   try{
     const result=await sb.from('transactions').delete().eq('id',id);
-    dbg('4. DB call returned: '+JSON.stringify(result));
-    if(result.error){
-      dbg('5. ERROR: '+JSON.stringify(result.error));
-    } else {
-      dbg('5. SUCCESS');
-    }
+    dbg('3. DB returned: '+JSON.stringify(result));
   }catch(e){
-    dbg('4. EXCEPTION: '+e.message);
+    dbg('3. EXCEPTION: '+e.message+' | stack: '+(e.stack||'').substring(0,200));
   }
-  dbg('6. Verifying in DB...');
-  const check=await sb.from('transactions').select('id').eq('id',id);
-  dbg('7. Verify result: '+JSON.stringify(check));
+  dbg('4. Done');
 }
 
 // ════ TX ROW ════
