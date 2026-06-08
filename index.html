@@ -446,236 +446,214 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 </style>
 <script>
-// Minimal Supabase Client - implements only what this app needs
-window.supabase = {
-  createClient: function(url, key) {
-    var _url = url, _key = key;
-    var _session = null;
-    var _listeners = [];
-    var _channels = [];
-    var _wsUrl = url.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + key + '&vsn=1.0.0';
-    var _ws = null;
-    var _wsReady = false;
-    var _wsSubs = [];
+// Minimal Supabase Client v3 - explicit Promise pattern (no thenable)
+(function(){
+  function createClient(url, key) {
+    var _url=url, _key=key, _session=null, _listeners=[];
 
-    // REST helper
-    async function rest(method, path, body, extraHeaders) {
-      async function doFetch(token) {
-        var h = {'apikey':_key,'Content-Type':'application/json','Prefer':'return=representation'};
-        if (token) h['Authorization'] = 'Bearer ' + token;
-        if (extraHeaders) Object.assign(h, extraHeaders);
-        var opts = {method:method, headers:h};
-        if (body) opts.body = JSON.stringify(body);
-        return await fetch(_url + path, opts);
-      }
-      var r = await doFetch(_session && _session.access_token);
-      if (r.status === 401 && _session && _session.refresh_token) {
-        try {
-          var rr = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
-            method:'POST',
-            headers:{'apikey':_key,'Content-Type':'application/json'},
-            body:JSON.stringify({refresh_token:_session.refresh_token})
-          });
-          if (rr.ok) {
-            var rd = await rr.json();
-            if (rd.access_token) {
-              _session = rd;
-              localStorage.setItem('sb-session', JSON.stringify(rd));
-              r = await doFetch(rd.access_token);
-            }
-          }
-        } catch(e2) {}
-      }
-      var text = await r.text();
-      var data = null;
-      try { data = text ? JSON.parse(text) : null; } catch(e) {}
-      if (!r.ok) return {data:null, error:data||{message:'Error '+r.status}};
-      return {data:data, error:null};
-    }
-
-    // Query builder
-    function query(table) {
-      var _filters = [], _cols = '*', _single = false, _order = null, _limit = null;
-      function buildUrl() {
-        var q = _url + '/rest/v1/' + table + '?select=' + _cols;
-        _filters.forEach(function(f) { q += '&' + f; });
-        if (_order) q += '&order=' + _order;
-        if (_limit) q += '&limit=' + _limit;
-        return q;
-      }
-      var qb = {
-        select: function(cols) { _cols = cols||'*'; return qb; },
-        eq: function(col, val) { _filters.push(col + '=eq.' + val); return qb; },
-        single: function() { _single = true; return qb; },
-        order: function(col, opts) { _order = col + '.' + ((opts&&opts.ascending===false)?'desc':'asc'); return qb; },
-        limit: function(n) { _limit = n; return qb; },
-        filter: function(col, op, val) { _filters.push(col + '=' + op + '.' + val); return qb; },
-        then: async function(resolve) {
-          var headers = {};
-          if (_single) headers['Accept'] = 'application/vnd.pgrst.object+json';
-          var r = await fetch(buildUrl(), {headers: Object.assign({'apikey':_key, 'Authorization': _session?'Bearer '+_session.access_token:_key}, headers)});
-          var text = await r.text();
-          var data = text ? JSON.parse(text) : null;
-          if (!r.ok) resolve({data:null, error:data});
-          else resolve({data:data, error:null});
-        }
-      };
-      // Make it thenable (Promise-like)
-      qb[Symbol.asyncIterator] = undefined;
-      Object.defineProperty(qb, Symbol.toStringTag, {value:'QueryBuilder'});
-      return qb;
-    }
-
-    function from(table) {
-      return {
-        select: function(cols) { return query(table).select(cols); },
-        insert: function(data) {
-          var _sel = false, _single = false;
-          var ib = {
-            select: function() { _sel=true; return ib; },
-            single: function() { _single=true; return ib; },
-            then: async function(resolve) {
-              var h = {'Prefer': 'return=representation'};
-              var r = await rest('POST', '/rest/v1/'+table, Array.isArray(data)?data:[data], h);
-              // PostgREST returns array - extract first item for single()
-              if (r.data && Array.isArray(r.data)) {
-                r = {data: r.data[0], error: r.error};
+    function doFetch(method, path, body, extraHeaders) {
+      var h={'apikey':_key,'Content-Type':'application/json'};
+      if(_session) h['Authorization']='Bearer '+_session.access_token;
+      if(extraHeaders) Object.assign(h,extraHeaders);
+      var opts={method:method,headers:h};
+      if(body) opts.body=JSON.stringify(body);
+      return fetch(_url+path,opts).then(function(r){
+        return r.text().then(function(text){
+          var data=null;
+          try{data=text?JSON.parse(text):null;}catch(e){}
+          if(r.status===401&&_session&&_session.refresh_token){
+            return fetch(_url+'/auth/v1/token?grant_type=refresh_token',{
+              method:'POST',
+              headers:{'apikey':_key,'Content-Type':'application/json'},
+              body:JSON.stringify({refresh_token:_session.refresh_token})
+            }).then(function(rr){return rr.json();}).then(function(rd){
+              if(rd.access_token){
+                _session=rd;
+                localStorage.setItem('sb-session',JSON.stringify(rd));
+                h['Authorization']='Bearer '+rd.access_token;
+                opts.headers=h;
+                return fetch(_url+path,opts).then(function(r2){
+                  return r2.text().then(function(t2){
+                    var d2=null;try{d2=t2?JSON.parse(t2):null;}catch(e){}
+                    if(!r2.ok)return{data:null,error:d2||{message:'Error '+r2.status}};
+                    return{data:d2,error:null};
+                  });
+                });
               }
-              resolve(r);
-            }
+              if(!r.ok)return{data:null,error:data||{message:'Error '+r.status}};
+              return{data:data,error:null};
+            });
+          }
+          if(!r.ok)return{data:null,error:data||{message:'Error '+r.status}};
+          return{data:data,error:null};
+        });
+      });
+    }
+
+    function from(table){
+      return {
+        select: function(cols){
+          var _filters=[],_single=false,_order=null;
+          var q={
+            eq:function(c,v){_filters.push(c+'=eq.'+encodeURIComponent(v));return q;},
+            order:function(c,o){_order=c+'.'+(o&&o.ascending===false?'desc':'asc');return q;},
+            single:function(){_single=true;return q;},
           };
-          return ib;
+          q.then=function(res,rej){
+            var qs='?select='+(cols||'*')+_filters.map(function(f){return'&'+f;}).join('');
+            if(_order)qs+='&order='+_order;
+            var h=_single?{'Accept':'application/vnd.pgrst.object+json'}:{};
+            return doFetch('GET','/rest/v1/'+table+qs,null,h).then(res,rej);
+          };
+          return q;
         },
-        update: function(data) {
-          var _filters = [];
-          var ub = {
-            eq: function(col,val) { _filters.push(col+'=eq.'+val); return ub; },
-            then: async function(resolve) {
-              var path = '/rest/v1/'+table+'?'+_filters.join('&');
-              resolve(await rest('PATCH', path, data));
-            }
+
+        insert: function(data){
+          var q={select:function(){return q;},single:function(){return q;}};
+          q.then=function(res,rej){
+            return doFetch('POST','/rest/v1/'+table,Array.isArray(data)?data:[data],
+              {'Prefer':'return=representation'}).then(function(r){
+              if(r.data&&Array.isArray(r.data))r={data:r.data[0],error:r.error};
+              return r;
+            }).then(res,rej);
           };
-          return ub;
+          return q;
         },
-        upsert: function(data, opts) {
-          var ub = {
-            then: async function(resolve) {
-              var conflict = opts&&opts.onConflict ? '?on_conflict='+opts.onConflict : '';
-              var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
-              resolve(await rest('POST', '/rest/v1/'+table+conflict, Array.isArray(data)?data:[data], h));
-            }
+
+        update: function(data){
+          var _filters=[];
+          var q={eq:function(c,v){_filters.push(c+'=eq.'+encodeURIComponent(v));return q;}};
+          q.then=function(res,rej){
+            var qs='?'+_filters.join('&');
+            return doFetch('PATCH','/rest/v1/'+table+qs,data,
+              {'Prefer':'return=representation'}).then(res,rej);
           };
-          return ub;
+          return q;
         },
-        delete: function() {
-          var _filters = [];
-          var db = {
-            eq: function(col,val) { _filters.push(col+'=eq.'+val); return db; },
-            then: async function(resolve) {
-              var path = '/rest/v1/'+table+'?'+_filters.join('&');
-              resolve(await rest('DELETE', path, null, {'Prefer':'return=minimal'}));
-            }
+
+        upsert: function(data,opts){
+          var q={};
+          q.then=function(res,rej){
+            var conflict=opts&&opts.onConflict?'?on_conflict='+opts.onConflict:'';
+            return doFetch('POST','/rest/v1/'+table+conflict,
+              Array.isArray(data)?data:[data],
+              {'Prefer':'resolution=merge-duplicates,return=representation'}).then(res,rej);
           };
-          return db;
+          return q;
+        },
+
+        delete: function(){
+          var _filters=[];
+          var q={eq:function(c,v){_filters.push(c+'=eq.'+encodeURIComponent(v));return q;}};
+          q.then=function(res,rej){
+            var qs='?'+_filters.join('&');
+            return doFetch('DELETE','/rest/v1/'+table+qs,null,
+              {'Prefer':'return=minimal'}).then(res,rej);
+          };
+          return q;
         }
       };
     }
 
-    // Auth
-    var auth = {
-      getSession: async function() {
-        var stored = localStorage.getItem('sb-session');
-        if (stored) {
-          try {
-            var s = JSON.parse(stored);
-            if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
-              _session = s;
-              _listeners.forEach(function(l){l('SIGNED_IN',s);});
-              return {data:{session:s}, error:null};
+    var auth={
+      getSession:function(){
+        return new Promise(function(resolve){
+          var stored=localStorage.getItem('sb-session');
+          if(!stored)return resolve({data:{session:null},error:null});
+          try{
+            var s=JSON.parse(stored);
+            if(s.expires_at&&Date.now()/1000<s.expires_at-60){
+              _session=s;
+              return resolve({data:{session:s},error:null});
             }
-            if (s.refresh_token) {
-              var r = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
+            if(s.refresh_token){
+              fetch(_url+'/auth/v1/token?grant_type=refresh_token',{
                 method:'POST',
                 headers:{'apikey':_key,'Content-Type':'application/json'},
                 body:JSON.stringify({refresh_token:s.refresh_token})
-              });
-              if (r.ok) {
-                var d = await r.json();
-                if (d.access_token) {
-                  _session = d;
-                  localStorage.setItem('sb-session', JSON.stringify(d));
-                  _listeners.forEach(function(l){l('SIGNED_IN',d);});
-                  return {data:{session:d}, error:null};
+              }).then(function(r){return r.json();}).then(function(d){
+                if(d.access_token){
+                  _session=d;
+                  localStorage.setItem('sb-session',JSON.stringify(d));
+                  resolve({data:{session:d},error:null});
+                } else {
+                  resolve({data:{session:null},error:null});
                 }
-              }
+              }).catch(function(){resolve({data:{session:null},error:null});});
+            } else {
+              resolve({data:{session:null},error:null});
             }
-          } catch(e){}
-        }
-        return {data:{session:null}, error:null};
+          }catch(e){resolve({data:{session:null},error:null});}
+        });
       },
-      signInWithPassword: async function(creds) {
-        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds, {'Authorization':'Bearer '+_key});
-        if (r.error) return r;
-        _session = r.data;
-        localStorage.setItem('sb-session', JSON.stringify(r.data));
-        _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
-        return {data:{user:r.data.user, session:r.data}, error:null};
+
+      signInWithPassword:function(creds){
+        return doFetch('POST','/auth/v1/token?grant_type=password',creds,
+          {'Authorization':'Bearer '+_key}).then(function(r){
+          if(r.error)return r;
+          _session=r.data;
+          localStorage.setItem('sb-session',JSON.stringify(r.data));
+          _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
+          return{data:{user:r.data.user,session:r.data},error:null};
+        });
       },
-      signUp: async function(creds) {
-        var r = await rest('POST', '/auth/v1/signup', creds, {'Authorization':'Bearer '+_key});
-        if (r.error) return r;
-        _session = r.data;
-        if (r.data && r.data.access_token) localStorage.setItem('sb-session', JSON.stringify(r.data));
-        return {data:{user:r.data&&r.data.user, session:r.data}, error:null};
+
+      signUp:function(creds){
+        return doFetch('POST','/auth/v1/signup',creds,
+          {'Authorization':'Bearer '+_key}).then(function(r){
+          if(r.error)return r;
+          _session=r.data;
+          if(r.data&&r.data.access_token)
+            localStorage.setItem('sb-session',JSON.stringify(r.data));
+          return{data:{user:r.data&&r.data.user,session:r.data},error:null};
+        });
       },
-      signOut: async function() {
+
+      signOut:function(){
         localStorage.removeItem('sb-session');
-        _session = null;
+        _session=null;
         _listeners.forEach(function(l){l('SIGNED_OUT',null);});
-        return {error:null};
+        return Promise.resolve({error:null});
       },
-      resetPasswordForEmail: async function(email, opts) {
-        return await rest('POST', '/auth/v1/recover', {email:email, redirect_to:opts&&opts.redirectTo});
+
+      resetPasswordForEmail:function(email,opts){
+        return doFetch('POST','/auth/v1/recover',
+          {email:email,redirect_to:opts&&opts.redirectTo},
+          {'Authorization':'Bearer '+_key});
       },
-      onAuthStateChange: function(cb) {
+
+      onAuthStateChange:function(cb){
         _listeners.push(cb);
-        return {data:{subscription:{unsubscribe:function(){_listeners=_listeners.filter(function(l){return l!==cb;});}}}};
+        return{data:{subscription:{unsubscribe:function(){
+          _listeners=_listeners.filter(function(l){return l!==cb;});
+        }}}};
       }
     };
 
-    // Realtime (simplified)
-    function channel(name) {
-      var _subs = [];
-      var ch = {
-        on: function(type, opts, cb) {
-          _subs.push({type:type, table:opts.table, filter:opts.filter, cb:cb, event:opts.event});
-          return ch;
-        },
-        subscribe: function(statusCb) {
-          // Poll for changes every 3 seconds as fallback
-          var prevCounts = {};
-          setInterval(async function() {
-            for (var sub of _subs) {
-              try {
-                var qb = from(sub.table).select('id');
-                if (sub.filter) {
-                  var parts = sub.filter.split('=eq.');
-                  if (parts.length===2) qb = qb.eq(parts[0].replace('family_id','family_id'), parts[1]);
-                }
-                // Just trigger a re-fetch via the app's existing load functions
-              } catch(e){}
-            }
-          }, 5000);
-          if (statusCb) statusCb('SUBSCRIBED');
+    function channel(name){
+      var _subs=[],_iv=null;
+      var ch={
+        on:function(type,opts,cb){_subs.push({table:opts&&opts.table,cb:cb});return ch;},
+        subscribe:function(cb){
+          if(cb)cb('SUBSCRIBED');
+          _iv=setInterval(function(){
+            _subs.forEach(function(sub){
+              if(sub.table){
+                doFetch('GET','/rest/v1/'+sub.table+'?select=id&limit=1').then(function(){});
+              }
+            });
+          },5000);
           return ch;
         }
       };
       return ch;
     }
 
-    return {from:from, auth:auth, channel:channel};
+    return{from:from,auth:auth,channel:channel};
   }
-};
+
+  window.supabase={createClient:createClient};
+})();
 </script>
 
 <script>
@@ -2008,34 +1986,17 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  // DEBUG: show what we're working with
-  const dbg=(msg)=>{
-    let d=document.getElementById('debug-box');
-    if(!d){d=document.createElement('div');d.id='debug-box';d.style.cssText='position:fixed;top:50px;left:10px;right:10px;background:#000;color:#0f0;font-size:11px;font-family:monospace;padding:10px;z-index:9999;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;direction:ltr;max-height:300px;overflow:auto';document.body.appendChild(d);}
-    d.textContent+=msg+'\n';
-  };
-  document.getElementById('debug-box')?.remove();
-  dbg('delTx called with id: '+id+' (type: '+typeof id+')');
-  dbg('Total txs: '+txs.length);
-  const match=txs.find(t=>String(t.id)===String(id));
-  dbg('Found match: '+(match?('YES id='+match.id):'NO'));
-  if(match)dbg('match.id type: '+typeof match.id);
-  
   const before=txs.length;
   txs=txs.filter(t=>String(t.id)!==String(id));
-  dbg('After filter: '+txs.length+' (removed '+(before-txs.length)+')');
+  if(txs.length===before){toast('עסקה לא נמצאה');return;}
   render();
-  
-  dbg('Calling DB delete...');
-  const {data,error}=await sb.from('transactions').delete().eq('id',id);
+  const {error}=await sb.from('transactions').delete().eq('id',id);
   if(error){
-    dbg('DB ERROR: '+JSON.stringify(error));
+    toast('שגיאה במחיקה');
+    await loadUserData();
   } else {
-    dbg('DB delete OK. data: '+JSON.stringify(data));
+    toast('עסקה נמחקה ✓');
   }
-  // Verify it's actually gone from DB
-  const {data:check}=await sb.from('transactions').select('id').eq('id',id);
-  dbg('Verify - still in DB: '+JSON.stringify(check));
 }
 
 // ════ TX ROW ════
