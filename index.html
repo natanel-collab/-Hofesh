@@ -466,6 +466,24 @@ window.supabase = {
       var opts = {method: method, headers: headers};
       if (body) opts.body = JSON.stringify(body);
       var r = await fetch(_url + path, opts);
+      // If 401, try to refresh token and retry once
+      if (r.status === 401 && _session) {
+        try {
+          var rr = await fetch(_url + '/auth/v1/token?grant_type=refresh_token',
+            {method:'POST', headers:{'apikey':_key,'Content-Type':'application/json','Authorization':'Bearer '+_key},
+             body: JSON.stringify({refresh_token: _session.refresh_token})});
+          if (rr.ok) {
+            var rd = await rr.json();
+            if (rd.access_token) {
+              _session = rd;
+              localStorage.setItem('sb-session', JSON.stringify(rd));
+              headers['Authorization'] = 'Bearer ' + rd.access_token;
+              opts.headers = headers;
+              r = await fetch(_url + path, opts);
+            }
+          }
+        } catch(e2) {}
+      }
       var text = await r.text();
       var data = text ? JSON.parse(text) : null;
       if (!r.ok) return {data: null, error: data || {message: 'Error ' + r.status}};
@@ -583,6 +601,23 @@ window.supabase = {
           } catch(e){}
         }
         return {data:{session:null}, error:null};
+      },
+      refreshSession: async function() {
+        // Force refresh the token right now
+        var stored = localStorage.getItem('sb-session');
+        if (!stored) return false;
+        try {
+          var s = JSON.parse(stored);
+          if (!s.refresh_token) return false;
+          var r = await rest('POST', '/auth/v1/token?grant_type=refresh_token',
+            {refresh_token: s.refresh_token}, {'Authorization':'Bearer '+_key});
+          if (r.data && r.data.access_token) {
+            _session = r.data;
+            localStorage.setItem('sb-session', JSON.stringify(r.data));
+            return true;
+          }
+        } catch(e) {}
+        return false;
       },
       signInWithPassword: async function(creds) {
         var r = await rest('POST', '/auth/v1/token?grant_type=password', creds, {'Authorization':'Bearer '+_key});
