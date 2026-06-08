@@ -2651,7 +2651,8 @@ function updateAvatarDisplay(src){
 async function saveName(){
   const name=C('new-name-inp').value.trim();
   if(!name){toast('הכנס שם');return;}
-  await sb.from('profiles').update({name}).eq('id',user.id);
+  const {error}=await sb.from('profiles').update({name}).eq('id',user.id);
+  if(error){toast('שגיאה: '+error.message);return;}
   profile.name=name;
   C('prof-name').textContent=name;
   C('nav-user').textContent=name[0].toUpperCase();
