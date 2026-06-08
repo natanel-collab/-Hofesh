@@ -446,120 +446,113 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 </style>
 <script>
-// Minimal Supabase Client v2 - fixed insert/upsert/delete/token refresh
+// Minimal Supabase Client - implements only what this app needs
 window.supabase = {
   createClient: function(url, key) {
-    var _url = url, _key = key, _session = null, _listeners = [];
+    var _url = url, _key = key;
+    var _session = null;
+    var _listeners = [];
+    var _channels = [];
+    var _wsUrl = url.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + key + '&vsn=1.0.0';
+    var _ws = null;
+    var _wsReady = false;
+    var _wsSubs = [];
 
-    // Auto-refresh token on 401
+    // REST helper
     async function rest(method, path, body, extraHeaders) {
-      async function doFetch(token) {
-        var h = {'apikey': _key, 'Content-Type': 'application/json'};
-        if (token) h['Authorization'] = 'Bearer ' + token;
-        if (extraHeaders) Object.assign(h, extraHeaders);
-        var opts = {method: method, headers: h};
-        if (body) opts.body = JSON.stringify(body);
-        return await fetch(_url + path, opts);
-      }
-
-      var r = await doFetch(_session && _session.access_token);
-
-      // 401 = expired token, try refresh once
-      if (r.status === 401 && _session && _session.refresh_token) {
-        try {
-          var rr = await fetch(_url + '/auth/v1/token?grant_type=refresh_token', {
-            method: 'POST',
-            headers: {'apikey': _key, 'Content-Type': 'application/json'},
-            body: JSON.stringify({refresh_token: _session.refresh_token})
-          });
-          if (rr.ok) {
-            var rd = await rr.json();
-            if (rd.access_token) {
-              _session = rd;
-              localStorage.setItem('sb-session', JSON.stringify(rd));
-              r = await doFetch(rd.access_token);
-            }
-          }
-        } catch(e) {}
-      }
-
+      var headers = {'apikey': _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
+      if (_session) headers['Authorization'] = 'Bearer ' + _session.access_token;
+      if (extraHeaders) Object.assign(headers, extraHeaders);
+      var opts = {method: method, headers: headers};
+      if (body) opts.body = JSON.stringify(body);
+      var r = await fetch(_url + path, opts);
       var text = await r.text();
-      var data = null;
-      try { data = text ? JSON.parse(text) : null; } catch(e) {}
-      if (!r.ok) return {data: null, error: data || {message: 'HTTP ' + r.status}};
+      var data = text ? JSON.parse(text) : null;
+      if (!r.ok) return {data: null, error: data || {message: 'Error ' + r.status}};
       return {data: data, error: null};
     }
 
     // Query builder
+    function query(table) {
+      var _filters = [], _cols = '*', _single = false, _order = null, _limit = null;
+      function buildUrl() {
+        var q = _url + '/rest/v1/' + table + '?select=' + _cols;
+        _filters.forEach(function(f) { q += '&' + f; });
+        if (_order) q += '&order=' + _order;
+        if (_limit) q += '&limit=' + _limit;
+        return q;
+      }
+      var qb = {
+        select: function(cols) { _cols = cols||'*'; return qb; },
+        eq: function(col, val) { _filters.push(col + '=eq.' + val); return qb; },
+        single: function() { _single = true; return qb; },
+        order: function(col, opts) { _order = col + '.' + ((opts&&opts.ascending===false)?'desc':'asc'); return qb; },
+        limit: function(n) { _limit = n; return qb; },
+        filter: function(col, op, val) { _filters.push(col + '=' + op + '.' + val); return qb; },
+        then: async function(resolve) {
+          var headers = {};
+          if (_single) headers['Accept'] = 'application/vnd.pgrst.object+json';
+          var r = await fetch(buildUrl(), {headers: Object.assign({'apikey':_key, 'Authorization': _session?'Bearer '+_session.access_token:_key}, headers)});
+          var text = await r.text();
+          var data = text ? JSON.parse(text) : null;
+          if (!r.ok) resolve({data:null, error:data});
+          else resolve({data:data, error:null});
+        }
+      };
+      // Make it thenable (Promise-like)
+      qb[Symbol.asyncIterator] = undefined;
+      Object.defineProperty(qb, Symbol.toStringTag, {value:'QueryBuilder'});
+      return qb;
+    }
+
     function from(table) {
       return {
-        select: function(cols) {
-          var _filters = [], _single = false, _order = null;
-          var q = {
-            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
-            order: function(c,o){_order=c+'.'+(o&&o.ascending===false?'desc':'asc');return q;},
-            single: function(){_single=true;return q;},
-            then: async function(resolve){
-              var qs='?select='+(cols||'*')+_filters.map(f=>'&'+f).join('');
-              if(_order) qs+='&order='+_order;
-              var h = _single ? {'Accept':'application/vnd.pgrst.object+json'} : {};
-              resolve(await rest('GET', '/rest/v1/'+table+qs, null, h));
-            }
-          };
-          return q;
-        },
-
+        select: function(cols) { return query(table).select(cols); },
         insert: function(data) {
-          var _select = false;
-          var q = {
-            select: function(){_select=true;return q;},
-            single: function(){return q;},
-            then: async function(resolve){
-              var h = {'Prefer': 'return=representation'};
+          var _sel = false;
+          var ib = {
+            select: function() { _sel=true; return ib; },
+            single: function() { return ib; },
+            then: async function(resolve) {
+              var h = {'Prefer': _sel?'return=representation':'return=minimal'};
               var r = await rest('POST', '/rest/v1/'+table, Array.isArray(data)?data:[data], h);
-              // PostgREST returns array - get first item
-              if (r.data && Array.isArray(r.data)) r = {data: r.data[0], error: r.error};
+              if (_sel && r.data && !Array.isArray(r.data)) r.data = r.data;
               resolve(r);
             }
           };
-          return q;
+          return ib;
         },
-
         update: function(data) {
           var _filters = [];
-          var q = {
-            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
-            then: async function(resolve){
-              var qs = '?'+_filters.join('&');
-              var h = {'Prefer': 'return=representation'};
-              resolve(await rest('PATCH', '/rest/v1/'+table+qs, data, h));
+          var ub = {
+            eq: function(col,val) { _filters.push(col+'=eq.'+val); return ub; },
+            then: async function(resolve) {
+              var path = '/rest/v1/'+table+'?'+_filters.join('&');
+              resolve(await rest('PATCH', path, data));
             }
           };
-          return q;
+          return ub;
         },
-
         upsert: function(data, opts) {
-          var q = {
-            then: async function(resolve){
-              // PostgREST: on_conflict in URL, not body
-              var conflict = opts&&opts.onConflict ? '?on_conflict='+opts.onConflict : '';
-              var h = {'Prefer': 'resolution=merge-duplicates,return=representation'};
-              resolve(await rest('POST', '/rest/v1/'+table+conflict, Array.isArray(data)?data:[data], h));
+          var ub = {
+            then: async function(resolve) {
+              var conflict = opts&&opts.onConflict ? '&on_conflict='+opts.onConflict : '';
+              var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
+              resolve(await rest('POST', '/rest/v1/'+table+'?upsert=true'+conflict, Array.isArray(data)?data:[data], h));
             }
           };
-          return q;
+          return ub;
         },
-
         delete: function() {
           var _filters = [];
-          var q = {
-            eq: function(c,v){_filters.push(c+'=eq.'+v);return q;},
-            then: async function(resolve){
-              var qs = '?'+_filters.join('&');
-              resolve(await rest('DELETE', '/rest/v1/'+table+qs, null, {'Prefer':'return=minimal'}));
+          var db = {
+            eq: function(col,val) { _filters.push(col+'=eq.'+val); return db; },
+            then: async function(resolve) {
+              var path = '/rest/v1/'+table+'?'+_filters.join('&');
+              resolve(await rest('DELETE', path, null, {'Prefer':'return=minimal'}));
             }
           };
-          return q;
+          return db;
         }
       };
     }
@@ -568,98 +561,73 @@ window.supabase = {
     var auth = {
       getSession: async function() {
         var stored = localStorage.getItem('sb-session');
-        if (!stored) return {data:{session:null},error:null};
-        try {
-          var s = JSON.parse(stored);
-          // Still valid
-          if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
-            _session = s;
-            return {data:{session:s},error:null};
-          }
-          // Try refresh
-          if (s.refresh_token) {
-            var r = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
-              method:'POST',
-              headers:{'apikey':_key,'Content-Type':'application/json'},
-              body: JSON.stringify({refresh_token: s.refresh_token})
-            });
-            if (r.ok) {
-              var d = await r.json();
-              if (d.access_token) {
-                _session = d;
-                localStorage.setItem('sb-session', JSON.stringify(d));
-                return {data:{session:d},error:null};
-              }
+        if (stored) {
+          try {
+            var s = JSON.parse(stored);
+            // Check if expired
+            if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
+              _session = s;
+              _listeners.forEach(function(l){l('SIGNED_IN',s);});
+              return {data:{session:s}, error:null};
             }
-          }
-        } catch(e) {}
-        return {data:{session:null},error:null};
+          } catch(e){}
+        }
+        return {data:{session:null}, error:null};
       },
-
       signInWithPassword: async function(creds) {
-        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds,
-          {'Authorization':'Bearer '+_key});
+        var r = await rest('POST', '/auth/v1/token?grant_type=password', creds, {'Authorization':'Bearer '+_key});
         if (r.error) return r;
         _session = r.data;
         localStorage.setItem('sb-session', JSON.stringify(r.data));
         _listeners.forEach(function(l){l('SIGNED_IN',r.data);});
-        return {data:{user:r.data.user,session:r.data},error:null};
+        return {data:{user:r.data.user, session:r.data}, error:null};
       },
-
       signUp: async function(creds) {
-        var r = await rest('POST', '/auth/v1/signup', creds,
-          {'Authorization':'Bearer '+_key});
+        var r = await rest('POST', '/auth/v1/signup', creds, {'Authorization':'Bearer '+_key});
         if (r.error) return r;
         _session = r.data;
-        if (r.data&&r.data.access_token)
-          localStorage.setItem('sb-session', JSON.stringify(r.data));
-        return {data:{user:r.data&&r.data.user,session:r.data},error:null};
+        if (r.data && r.data.access_token) localStorage.setItem('sb-session', JSON.stringify(r.data));
+        return {data:{user:r.data&&r.data.user, session:r.data}, error:null};
       },
-
       signOut: async function() {
         localStorage.removeItem('sb-session');
         _session = null;
         _listeners.forEach(function(l){l('SIGNED_OUT',null);});
         return {error:null};
       },
-
       resetPasswordForEmail: async function(email, opts) {
-        return await rest('POST', '/auth/v1/recover',
-          {email:email,redirect_to:opts&&opts.redirectTo},
-          {'Authorization':'Bearer '+_key});
+        return await rest('POST', '/auth/v1/recover', {email:email, redirect_to:opts&&opts.redirectTo});
       },
-
       onAuthStateChange: function(cb) {
         _listeners.push(cb);
-        return {data:{subscription:{unsubscribe:function(){
-          _listeners=_listeners.filter(function(l){return l!==cb;});
-        }}}};
+        return {data:{subscription:{unsubscribe:function(){_listeners=_listeners.filter(function(l){return l!==cb;});}}}};
       }
     };
 
-    // Realtime - subscribe to changes via polling every 4 seconds
+    // Realtime (simplified)
     function channel(name) {
       var _subs = [];
-      var _interval = null;
       var ch = {
         on: function(type, opts, cb) {
-          _subs.push({table:opts.table,filter:opts.filter,event:opts.event,cb:cb});
+          _subs.push({type:type, table:opts.table, filter:opts.filter, cb:cb, event:opts.event});
           return ch;
         },
         subscribe: function(statusCb) {
-          if (statusCb) statusCb('SUBSCRIBED');
-          // Poll every 4 seconds for changes
-          _interval = setInterval(async function(){
+          // Poll for changes every 3 seconds as fallback
+          var prevCounts = {};
+          setInterval(async function() {
             for (var sub of _subs) {
               try {
-                var qs = '?select=id';
-                if (sub.filter) qs += '&'+sub.filter.replace('=eq.','=eq.');
-                var r = await rest('GET', '/rest/v1/'+sub.table+qs);
-                // Only trigger if data changed - simple approach: trigger always
-                // The app re-renders from DB which handles duplicates
+                var qb = from(sub.table).select('id');
+                if (sub.filter) {
+                  var parts = sub.filter.split('=eq.');
+                  if (parts.length===2) qb = qb.eq(parts[0].replace('family_id','family_id'), parts[1]);
+                }
+                // Just trigger a re-fetch via the app's existing load functions
               } catch(e){}
             }
-          }, 4000);
+          }, 5000);
+          if (statusCb) statusCb('SUBSCRIBED');
           return ch;
         }
       };
@@ -1715,7 +1683,6 @@ async function loadUserData(){
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
-  ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cat','ov-profile'].forEach(initSheetSwipe);
   // Init swipe-down for all sheets
   ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cash','ov-profile','ov-cat'].forEach(initSheetSwipe);
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
@@ -1745,7 +1712,6 @@ async function loadUserData(){
     
     // Fallback: try external APIs
     const externalApis=[
-      {url:'https://api.frankfurter.app/latest?from=USD&to=ILS',parse:d=>d?.rates?.ILS},
       {url:'https://api.exchangerate-api.com/v4/latest/USD',parse:d=>d?.rates?.ILS},
       {url:'https://open.er-api.com/v6/latest/USD',parse:d=>d?.rates?.ILS},
     ];
@@ -1940,12 +1906,10 @@ async function addTx(){
     date:new Date(date+'T12:00:00').toISOString()
   };
   C('a-sub').textContent='שומר...';
-  const {data:_res,error}=await sb.from('transactions').insert(row).select().single();
+  const {data:newTx,error}=await sb.from('transactions').insert(row).select().single();
   if(error){toast('שגיאה: '+error.message);setAT(aType);return;}
-  // Use returned data if valid, otherwise use the row we built
-  const newTx=(_res&&_res.id)?_res:(Array.isArray(_res)&&_res[0]?.id)?_res[0]:null;
-  const txEntry=newTx?{...newTx,amount:parseFloat(newTx.amount)}:{...row,id:'tmp-'+Date.now()};
-  txs.unshift(txEntry);
+  // Add to local array immediately - no need to wait for realtime
+  txs.unshift({...newTx,amount:parseFloat(newTx.amount)});
   closeAdd();
   render();
   toast(aType==='expense'?`הוצאה ₪${fmt(amt)} ✓`:aType==='income'?`הכנסה ₪${fmt(amt)} ✓`:`השקעה ₪${fmt(amt)} ✓`);
@@ -1998,22 +1962,17 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  // Don't try to delete tmp ids (not saved to DB yet)
-  if(String(id).startsWith('tmp-')){
-    txs=txs.filter(t=>t.id!==id);
-    render();
-    toast('עסקה נמחקה');
-    return;
-  }
-  // Optimistic update
+  // Optimistic update - remove from UI immediately
   txs=txs.filter(t=>t.id!==id);
   render();
-  const {error}=await sb.from('transactions').delete().eq('id',id);
-  if(error){
-    toast('שגיאה במחיקה');
-    await loadUserData();
-  } else {
-    toast('עסקה נמחקה');
+  toast('עסקה נמחקה');
+  // Then delete from DB in background
+  try{
+    await sb.from('transactions').delete().eq('id',id);
+  }catch(e){
+    // If DB delete fails, show error but keep local state
+    console.error('Delete failed:',e);
+    toast('שגיאה במחיקה — נסה שוב');
   }
 }
 
@@ -2468,38 +2427,6 @@ function initSwipe(){
   },{passive:true});
 }
 
-function initSheetSwipe(ovId){
-  const ov=C(ovId);
-  if(!ov)return;
-  const sheet=ov.querySelector('.sheet');
-  if(!sheet)return;
-  let startY=0,startScroll=0,dragging=false;
-  sheet.addEventListener('touchstart',e=>{
-    startY=e.touches[0].clientY;
-    startScroll=sheet.scrollTop;
-    dragging=true;
-    sheet.style.transition='none';
-  },{passive:true});
-  sheet.addEventListener('touchmove',e=>{
-    if(!dragging)return;
-    const dy=e.touches[0].clientY-startY;
-    if(dy>0&&startScroll<=0){
-      sheet.style.transform=`translateY(${Math.min(dy*0.7,350)}px)`;
-    }
-  },{passive:true});
-  sheet.addEventListener('touchend',e=>{
-    if(!dragging)return;
-    dragging=false;
-    const dy=e.changedTouches[0].clientY-startY;
-    sheet.style.transition='transform .4s cubic-bezier(.32,.72,0,1)';
-    sheet.style.transform='';
-    if(dy>150&&startScroll<=0){
-      ov.classList.remove('on');
-      if(ovId==='ov-add')C('fab').classList.remove('open');
-    }
-  },{passive:true});
-}
-
 // ════ INIT ════
 async function initApp(){
   // Show auth screen immediately, then check session
@@ -2688,8 +2615,7 @@ function updateAvatarDisplay(src){
 async function saveName(){
   const name=C('new-name-inp').value.trim();
   if(!name){toast('הכנס שם');return;}
-  const {error}=await sb.from('profiles').update({name}).eq('id',user.id);
-  if(error){toast('שגיאה: '+error.message);return;}
+  await sb.from('profiles').update({name}).eq('id',user.id);
   profile.name=name;
   C('prof-name').textContent=name;
   C('nav-user').textContent=name[0].toUpperCase();
