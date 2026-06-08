@@ -2028,7 +2028,7 @@ function mkTx(t,i){
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
   const whoTag=t.user_name?`<span class="tx-who">${t.user_name}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
-    <div class="tx" onclick="toggleTxActions(${t.id})">
+    <div class="tx" onclick="toggleTxActions('${t.id}')">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
         <div class="tx-name">${t.description||t.category}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
@@ -2038,9 +2038,9 @@ function mkTx(t,i){
       <span style="font-size:.65rem;color:var(--txt3);flex-shrink:0">···</span>
     </div>
     <div class="tx-action-bar" style="padding:.4rem .85rem;gap:.5rem;background:var(--bg3);border:.5px solid var(--b1);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
-      <button onclick="openEdit(${t.id});C('txw-${t.id}').classList.remove('sw')"
+      <button onclick="openEdit('${t.id}');C('txw-${t.id}').classList.remove('sw')"
         style="flex:1;padding:.45rem;border-radius:8px;background:var(--blu-d);border:.5px solid var(--blu-b);color:var(--blu);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">✎ עריכה</button>
-      <button onclick="delTx(${t.id})"
+      <button onclick="delTx('${t.id}')"
         style="flex:1;padding:.45rem;border-radius:8px;background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">🗑 מחיקה</button>
     </div>
   </div>`;
@@ -2405,14 +2405,14 @@ function renderGoals(){
       <div class="goal-top"><div class="goal-name">🎯 ${g.name}</div>
         <div style="display:flex;align-items:center;gap:.35rem">
           <div class="goal-pct">${pct}%</div>
-          <button onclick="delGoal(${g.id})" style="width:22px;height:22px;border-radius:6px;background:var(--red-d);border:none;color:var(--red);cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center">✕</button>
+          <button onclick="delGoal('${g.id}')" style="width:22px;height:22px;border-radius:6px;background:var(--red-d);border:none;color:var(--red);cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center">✕</button>
         </div></div>
       <div class="ptrack" style="margin-bottom:.5rem"><div class="pfill" style="width:${pct}%;background:${barColor}"></div></div>
       <div class="goal-amts" style="margin-bottom:.6rem"><span style="color:var(--grn);font-weight:600">₪${fmt(saved)} נצבר</span><span>יעד: ₪${fmt(g.target)}</span></div>
       ${lastAdded?`<div style="font-size:.65rem;color:var(--txt2);margin-bottom:.5rem">הפעם האחרונה: +₪${fmt(lastAdded.amount)} · ${new Date(lastAdded.date).toLocaleDateString('he-IL')}</div>`:''}
       <div style="display:flex;gap:.4rem">
-        <button onclick="addGoalProgress(${g.id})" style="flex:1;padding:.5rem;border-radius:9px;background:var(--grn-d);border:.5px solid var(--grn-b);color:var(--grn);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">+ הוסף יתרה</button>
-        <button onclick="editGoalSaved(${g.id})" style="flex:1;padding:.5rem;border-radius:9px;background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">✎ עדכן יתרה</button>
+        <button onclick="addGoalProgress('${g.id}')" style="flex:1;padding:.5rem;border-radius:9px;background:var(--grn-d);border:.5px solid var(--grn-b);color:var(--grn);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">+ הוסף יתרה</button>
+        <button onclick="editGoalSaved('${g.id}')" style="flex:1;padding:.5rem;border-radius:9px;background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">✎ עדכן יתרה</button>
       </div>
       ${monthly&&pct<100?`<div class="goal-tip" style="margin-top:.5rem">💡 חסוך ₪${fmt(monthly)}/חודש תוך ${g.months} חודשים</div>`:''}
       ${pct>=100?`<div style="margin-top:.5rem;background:var(--grn-d);border:.5px solid var(--grn-b);border-radius:8px;padding:.4rem .6rem;font-size:.72rem;color:var(--grn);text-align:center">🎉 הגעת ליעד!</div>`:''}
