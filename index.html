@@ -460,16 +460,37 @@ window.supabase = {
 
     // REST helper
     async function rest(method, path, body, extraHeaders) {
-      var headers = {'apikey': _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
-      if (_session) headers['Authorization'] = 'Bearer ' + _session.access_token;
-      if (extraHeaders) Object.assign(headers, extraHeaders);
-      var opts = {method: method, headers: headers};
-      if (body) opts.body = JSON.stringify(body);
-      var r = await fetch(_url + path, opts);
+      async function doFetch(token) {
+        var h = {'apikey':_key,'Content-Type':'application/json','Prefer':'return=representation'};
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        if (extraHeaders) Object.assign(h, extraHeaders);
+        var opts = {method:method, headers:h};
+        if (body) opts.body = JSON.stringify(body);
+        return await fetch(_url + path, opts);
+      }
+      var r = await doFetch(_session && _session.access_token);
+      if (r.status === 401 && _session && _session.refresh_token) {
+        try {
+          var rr = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
+            method:'POST',
+            headers:{'apikey':_key,'Content-Type':'application/json'},
+            body:JSON.stringify({refresh_token:_session.refresh_token})
+          });
+          if (rr.ok) {
+            var rd = await rr.json();
+            if (rd.access_token) {
+              _session = rd;
+              localStorage.setItem('sb-session', JSON.stringify(rd));
+              r = await doFetch(rd.access_token);
+            }
+          }
+        } catch(e2) {}
+      }
       var text = await r.text();
-      var data = text ? JSON.parse(text) : null;
-      if (!r.ok) return {data: null, error: data || {message: 'Error ' + r.status}};
-      return {data: data, error: null};
+      var data = null;
+      try { data = text ? JSON.parse(text) : null; } catch(e) {}
+      if (!r.ok) return {data:null, error:data||{message:'Error '+r.status}};
+      return {data:data, error:null};
     }
 
     // Query builder
@@ -536,9 +557,9 @@ window.supabase = {
         upsert: function(data, opts) {
           var ub = {
             then: async function(resolve) {
-              var conflict = opts&&opts.onConflict ? '&on_conflict='+opts.onConflict : '';
+              var conflict = opts&&opts.onConflict ? '?on_conflict='+opts.onConflict : '';
               var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
-              resolve(await rest('POST', '/rest/v1/'+table+'?upsert=true'+conflict, Array.isArray(data)?data:[data], h));
+              resolve(await rest('POST', '/rest/v1/'+table+conflict, Array.isArray(data)?data:[data], h));
             }
           };
           return ub;
@@ -564,11 +585,26 @@ window.supabase = {
         if (stored) {
           try {
             var s = JSON.parse(stored);
-            // Check if expired
             if (s.expires_at && Date.now()/1000 < s.expires_at - 60) {
               _session = s;
               _listeners.forEach(function(l){l('SIGNED_IN',s);});
               return {data:{session:s}, error:null};
+            }
+            if (s.refresh_token) {
+              var r = await fetch(_url+'/auth/v1/token?grant_type=refresh_token', {
+                method:'POST',
+                headers:{'apikey':_key,'Content-Type':'application/json'},
+                body:JSON.stringify({refresh_token:s.refresh_token})
+              });
+              if (r.ok) {
+                var d = await r.json();
+                if (d.access_token) {
+                  _session = d;
+                  localStorage.setItem('sb-session', JSON.stringify(d));
+                  _listeners.forEach(function(l){l('SIGNED_IN',d);});
+                  return {data:{session:d}, error:null};
+                }
+              }
             }
           } catch(e){}
         }
@@ -1488,7 +1524,14 @@ function setTheme(theme){
   }
 }
 
-async function leaveFamily(){
+async function removeMember(id,name){
+  if(!confirm('להסיר את '+name+'?'))return;
+  await sb.from('profiles').update({family_id:null,family_code:null}).eq('id',id);
+  toast(name+' הוסר ✓');
+  openProfile();
+}
+
+function leaveFamily(){
   C('ov-profile').classList.remove('on');
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:2rem';
@@ -2397,15 +2440,27 @@ function initSheetSwipe(ovId){
   if(!ov)return;
   const sheet=ov.querySelector('.sheet');
   if(!sheet)return;
-  let startY=0, startScroll=0;
+  let startY=0,startScroll=0,dragging=false;
   sheet.addEventListener('touchstart',e=>{
     startY=e.touches[0].clientY;
     startScroll=sheet.scrollTop;
+    dragging=true;
+    sheet.style.transition='none';
+  },{passive:true});
+  sheet.addEventListener('touchmove',e=>{
+    if(!dragging)return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy>0&&startScroll<=0){
+      sheet.style.transform=`translateY(${Math.min(dy*0.7,350)}px)`;
+    }
   },{passive:true});
   sheet.addEventListener('touchend',e=>{
+    if(!dragging)return;
+    dragging=false;
     const dy=e.changedTouches[0].clientY-startY;
-    // Only close if swiped down significantly AND at top of sheet
-    if(dy>80&&startScroll<=0){
+    sheet.style.transition='transform .4s cubic-bezier(.32,.72,0,1)';
+    sheet.style.transform='';
+    if(dy>150&&startScroll<=0){
       ov.classList.remove('on');
       if(ovId==='ov-add')C('fab').classList.remove('open');
     }
