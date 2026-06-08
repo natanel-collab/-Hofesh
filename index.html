@@ -1987,17 +1987,32 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
+  const dbg=(msg)=>{
+    let d=document.getElementById('debug-box');
+    if(!d){d=document.createElement('div');d.id='debug-box';d.style.cssText='position:fixed;top:50px;left:10px;right:10px;background:#000;color:#0f0;font-size:11px;font-family:monospace;padding:10px;z-index:9999;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;direction:ltr;max-height:400px;overflow:auto';document.body.appendChild(d);}
+    d.textContent+=msg+'\n';
+  };
+  document.getElementById('debug-box')?.remove();
+  dbg('1. delTx called, id='+id);
   const before=txs.length;
   txs=txs.filter(t=>String(t.id)!==String(id));
-  if(txs.length===before){toast('עסקה לא נמצאה');return;}
+  dbg('2. Filtered locally: '+(before-txs.length)+' removed');
   render();
-  const {error}=await sb.from('transactions').delete().eq('id',id);
-  if(error){
-    toast('שגיאה במחיקה');
-    await loadUserData();
-  } else {
-    toast('עסקה נמחקה ✓');
+  dbg('3. About to call DB delete...');
+  try{
+    const result=await sb.from('transactions').delete().eq('id',id);
+    dbg('4. DB call returned: '+JSON.stringify(result));
+    if(result.error){
+      dbg('5. ERROR: '+JSON.stringify(result.error));
+    } else {
+      dbg('5. SUCCESS');
+    }
+  }catch(e){
+    dbg('4. EXCEPTION: '+e.message);
   }
+  dbg('6. Verifying in DB...');
+  const check=await sb.from('transactions').select('id').eq('id',id);
+  dbg('7. Verify result: '+JSON.stringify(check));
 }
 
 // ════ TX ROW ════
