@@ -25,6 +25,47 @@
 /* Hide invest tab */
 #tb-invest{display:none!important}
 
+/* ═══ WRAPPED STORIES ═══ */
+.wrapped-ov{position:fixed;inset:0;z-index:600;background:#000;opacity:0;pointer-events:none;
+  transition:opacity .25s}
+.wrapped-ov.on{opacity:1;pointer-events:all}
+.wrapped-bars{position:absolute;top:calc(env(safe-area-inset-top,0px) + .6rem);left:.75rem;right:.75rem;
+  display:flex;gap:.3rem;z-index:5}
+.wrapped-bar{flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:2px;overflow:hidden}
+.wrapped-bar-fill{height:100%;width:0%;background:#fff;border-radius:2px;transition:width .15s linear}
+.wrapped-bar.done .wrapped-bar-fill{width:100%;transition:none}
+.wrapped-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 1rem);left:1rem;z-index:5;
+  width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;cursor:pointer;
+  backdrop-filter:blur(10px)}
+.wrapped-track{display:flex;height:100%;transition:transform .35s cubic-bezier(.32,.72,0,1);will-change:transform}
+.wrapped-slide{flex:0 0 100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem 1.5rem;text-align:center;position:relative;overflow:hidden}
+.wrapped-tap-zone{position:absolute;top:0;bottom:0;width:35%;z-index:4}
+.wrapped-tap-l{left:0}
+.wrapped-tap-r{right:0}
+.wrapped-emoji{font-size:3.5rem;margin-bottom:1rem;animation:wrapPop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes wrapPop{0%{transform:scale(0) rotate(-15deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.wrapped-num{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.5rem;
+  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .1s both}
+.wrapped-title{font-size:1.6rem;font-weight:800;line-height:1.4;margin-bottom:.75rem;
+  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .15s both}
+.wrapped-sub{font-size:1rem;opacity:.85;line-height:1.6;margin-bottom:2rem;max-width:320px;
+  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .2s both}
+@keyframes wrapSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.wrapped-share{background:rgba(255,255,255,0.18);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;border-radius:50px;padding:.9rem 2.2rem;font-size:.95rem;font-weight:700;font-family:inherit;
+  cursor:pointer;display:flex;align-items:center;gap:.5rem;
+  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .3s both}
+.wrapped-share:active{transform:scale(0.96)}
+.wrapped-grad-1{background:linear-gradient(160deg,#30d158 0%,#0a84ff 100%)}
+.wrapped-grad-2{background:linear-gradient(160deg,#ff9f0a 0%,#ff453a 100%)}
+.wrapped-grad-3{background:linear-gradient(160deg,#bf5af2 0%,#0a84ff 100%)}
+.wrapped-grad-4{background:linear-gradient(160deg,#0a84ff 0%,#30d158 60%,#ffd60a 100%)}
+.wrapped-logo{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 1.2rem);font-size:.75rem;
+  opacity:.6;font-weight:700;letter-spacing:.05em}
+
+
 /* Goal celebration */
 .celebrate-ov{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s}
 .celebrate-ov.on{opacity:1;pointer-events:all}
@@ -834,6 +875,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="motiv-content"></div>
       </div>
 
+      <div onclick="openWrapped()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
+        background:linear-gradient(135deg,rgba(191,90,242,0.15),rgba(10,132,255,0.12));
+        border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:.8rem;margin-bottom:.75rem;
+        font-size:.85rem;font-weight:700;color:#fff">
+        <span style="font-size:1.2rem">✨</span>
+        <span>הסיכום שלי לחודש</span>
+        <span style="font-size:1.2rem">→</span>
+      </div>
+
       <div class="card glass">
         <div class="card-head">📊 הוצאות שבועיות</div>
         <div class="bars" id="wk-bars"></div>
@@ -1129,6 +1179,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
     <button onclick="saveCash()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--ylw);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
   </div></div>
+
+  <!-- WRAPPED STORIES -->
+  <div class="wrapped-ov" id="wrapped-ov">
+    <div class="wrapped-bars" id="wrapped-bars"></div>
+    <div class="wrapped-close" onclick="closeWrapped()">✕</div>
+    <div class="wrapped-tap-zone wrapped-tap-l" onclick="wrappedNav(-1)"></div>
+    <div class="wrapped-tap-zone wrapped-tap-r" onclick="wrappedNav(1)"></div>
+    <div class="wrapped-track" id="wrapped-track"></div>
+  </div>
 
   <!-- CELEBRATION -->
   <div class="celebrate-ov" id="celebrate-ov" onclick="C('celebrate-ov').classList.remove('on')">
@@ -2159,6 +2218,151 @@ function editGoalSaved(id){
   C('gp-inp').value=g.saved||0;C('gp-sub').style.background='var(--blu)';C('gp-sub').textContent='עדכן';
   C('ov-gp').classList.add('on');setTimeout(()=>C('gp-inp').focus(),320);
 }
+// ═══ WRAPPED STORIES ═══
+let _wrapIdx=0,_wrapTimer=null,_wrapSlides=[];
+const WRAP_DURATION=5000;
+
+function buildWrappedSlides(){
+  const mt=mTxs();
+  const exp=sumT(mt,'expense'),inc=sumT(mt,'income');
+  const inv=mt.filter(t=>t.type==='invest').reduce((s,t)=>s+t.amount,0);
+
+  // Top category
+  const catTotals={};
+  mt.filter(t=>t.type==='expense').forEach(t=>{catTotals[t.category]=(catTotals[t.category]||0)+t.amount;});
+  const topCat=Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  const topCatPct=topCat&&exp>0?Math.round(topCat[1]/exp*100):0;
+
+  // Savings rate
+  const savingsRate=inc>0?Math.round(((inc-exp)/inc)*100):0;
+
+  // Transaction count
+  const txCount=mt.length;
+
+  const slides=[];
+
+  slides.push({
+    grad:'wrapped-grad-1', emoji:'👋',
+    num:MHE[cM],
+    title:'הסיכום החודשי שלך מוכן',
+    sub:'בוא נראה איך התנהל החודש שלך כלכלית — באחוזים בלבד 🔒'
+  });
+
+  if(topCat){
+    slides.push({
+      grad:'wrapped-grad-2', emoji:getAllCats()[topCat[0]]?.i||'💰',
+      num:topCatPct+'%',
+      title:`מההוצאות שלי הלכו ל${topCat[0]}`,
+      sub:'הקטגוריה המובילה שלי החודש. ואצלכם?'
+    });
+  }
+
+  if(inc>0){
+    const rateText=savingsRate>=0?savingsRate+'%':'0%';
+    slides.push({
+      grad:savingsRate>=20?'wrapped-grad-4':'wrapped-grad-3', emoji:savingsRate>=20?'🚀':'💪',
+      num:rateText,
+      title: savingsRate>=0
+        ? `מההכנסות שלי נשארו אצלי החודש!`
+        : `הוצאתי יותר ממה שהכנסתי החודש`,
+      sub: savingsRate>=20
+        ? 'שיעור חיסכון מעולה — תמשיכו ככה!'
+        : 'כל אחוז חיסכון נחשב. ואתם?'
+    });
+  }
+
+  if(inv>0&&exp>0){
+    const invPct=Math.round(inv/(inv+exp)*100);
+    slides.push({
+      grad:'wrapped-grad-3', emoji:'📈',
+      num:invPct+'%',
+      title:'מהתקציב שלי הופנה להשקעות',
+      sub:'בניתי את העתיד שלי גם החודש 💪'
+    });
+  }
+
+  slides.push({
+    grad:'wrapped-grad-1', emoji:'✅',
+    num:String(txCount),
+    title:'עסקאות נרשמו החודש',
+    sub:'כל עסקה היא צעד לעבר שליטה פיננסית מלאה',
+    isLast:true
+  });
+
+  return slides;
+}
+
+function openWrapped(){
+  _wrapSlides=buildWrappedSlides();
+  _wrapIdx=0;
+
+  // Build progress bars
+  C('wrapped-bars').innerHTML=_wrapSlides.map((_,i)=>
+    `<div class="wrapped-bar" id="wbar-${i}"><div class="wrapped-bar-fill"></div></div>`
+  ).join('');
+
+  // Build slides
+  C('wrapped-track').innerHTML=_wrapSlides.map(s=>`
+    <div class="wrapped-slide ${s.grad}">
+      <div class="wrapped-emoji">${s.emoji}</div>
+      <div class="wrapped-num">${s.num}</div>
+      <div class="wrapped-title">${s.title}</div>
+      <div class="wrapped-sub">${s.sub}</div>
+      <button class="wrapped-share" onclick="shareWrapped('${s.title.replace(/'/g,"\\'")}','${s.num}')">
+        <span>📤</span><span>שתף</span>
+      </button>
+      <div class="wrapped-logo">החופש לבחור</div>
+    </div>
+  `).join('');
+
+  C('wrapped-ov').classList.add('on');
+  wrappedGoTo(0);
+}
+
+function wrappedGoTo(i){
+  if(i<0){closeWrapped();return;}
+  if(i>=_wrapSlides.length){closeWrapped();return;}
+  _wrapIdx=i;
+  C('wrapped-track').style.transform=`translateX(${i*100}%)`;
+  // Update progress bars
+  _wrapSlides.forEach((_,idx)=>{
+    const bar=C('wbar-'+idx);
+    const fill=bar.querySelector('.wrapped-bar-fill');
+    bar.classList.remove('done');
+    if(idx<i){bar.classList.add('done');}
+    else{fill.style.transition='none';fill.style.width='0%';}
+  });
+  clearTimeout(_wrapTimer);
+  // Animate current bar
+  requestAnimationFrame(()=>{
+    const fill=C('wbar-'+i).querySelector('.wrapped-bar-fill');
+    fill.style.transition=`width ${WRAP_DURATION}ms linear`;
+    fill.style.width='100%';
+  });
+  _wrapTimer=setTimeout(()=>wrappedGoTo(i+1),WRAP_DURATION);
+}
+
+function wrappedNav(dir){
+  wrappedGoTo(_wrapIdx+dir);
+}
+
+function closeWrapped(){
+  clearTimeout(_wrapTimer);
+  C('wrapped-ov').classList.remove('on');
+}
+
+async function shareWrapped(title,num){
+  const text=`${num} — ${title}\nהחופש לבחור 💚`;
+  if(navigator.share){
+    try{await navigator.share({text});}catch(e){}
+  } else {
+    try{
+      await navigator.clipboard.writeText(text);
+      toast('הועתק ללוח ✓');
+    }catch(e){toast('שיתוף לא נתמך');}
+  }
+}
+
 function celebrateGoal(goalName){
   C('celebrate-title').textContent='יעד הושג! 🎯';
   C('celebrate-sub').textContent=goalName;
