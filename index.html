@@ -1131,22 +1131,28 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div></div>
 
-  <!-- OB MODAL -->
+  <!-- CALIBRATION MODAL -->
   <div class="ov" id="ov-ob" onclick="if(event.target===this)C('ov-ob').classList.remove('on')">
   <div class="sheet">
-    <div class="sh-handle"></div><div class="sh-title">עדכון יתרה</div>
-    <div id="ob-info" style="background:var(--surface);border-radius:10px;padding:.65rem .9rem;font-size:.75rem;color:var(--txt2);margin-bottom:.7rem"></div>
-    <div class="field"><span class="fi">💰</span>
-      <input type="number" id="ob-inp" placeholder="יתרת פתיחה" min="0" step="1"
-        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
-    <button onclick="saveOb()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
-    <div id="ob-real-wrap" style="display:none;align-items:center;gap:.6rem;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:.7rem .85rem;margin-top:.4rem">
-      <span style="font-size:.9rem">🏦</span>
-      <input type="number" id="ob-real" placeholder="כמה יש לך עכשיו בבנק? (₪)"
-        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.85rem;font-family:inherit;direction:rtl"
-        onkeydown="if(event.key==='Enter')setRealBalance()">
+    <div class="sh-handle"></div>
+    <div class="sh-title">🎯 כיול יתרה</div>
+    <div style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.18);border-radius:12px;padding:.75rem .9rem;margin-bottom:.85rem">
+      <div style="font-size:.78rem;font-weight:600;color:var(--grn);margin-bottom:.25rem">איך זה עובד?</div>
+      <div style="font-size:.74rem;color:var(--txt2);line-height:1.6">הכנס את סך הכסף שיש לכם עכשיו בפועל — בכל החשבונות ביחד. האפליקציה תסתנכרן למציאות.</div>
     </div>
-    <button onclick="setRealBalance()" style="width:100%;margin-top:.4rem;padding:.72rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.8rem;cursor:pointer">⟳ חשב לפי יתרה אמיתית בבנק</button>
+    <div style="font-size:.72rem;color:var(--txt3);margin-bottom:.4rem;font-weight:500">סך כל הכסף שלכם עכשיו (₪)</div>
+    <div class="field" style="margin-bottom:.85rem">
+      <span class="fi">🏦</span>
+      <input type="number" id="ob-real" placeholder="למשל: 4863" min="0" step="1"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.3rem;font-weight:700;font-family:inherit;direction:rtl"
+        onkeydown="if(event.key==='Enter')calibrateAndSave()">
+    </div>
+    <div id="ob-calc-preview" style="display:none;background:var(--surface);border-radius:10px;padding:.65rem .9rem;font-size:.75rem;color:var(--txt2);margin-bottom:.7rem"></div>
+    <input type="hidden" id="ob-inp">
+    <button onclick="calibrateAndSave()" style="width:100%;margin-top:.1rem;padding:.88rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.95rem;font-weight:700;border:none;cursor:pointer">כייל ✓</button>
+    <button onclick="C('ov-ob').classList.remove('on')" style="width:100%;margin-top:.45rem;padding:.72rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
+    <div id="ob-info" style="display:none"></div>
+    <div id="ob-real-wrap" style="display:none"></div>
   </div></div>
 
   <!-- GOAL MODAL -->
@@ -2123,24 +2129,35 @@ function mkTx(t,i){
   </div>`;
 }
 
-// ════ OPENING BALANCE ════
+// ════ CALIBRATE BALANCE ════
 function openOb(){
+  C('ob-real').value='';
+  C('ob-calc-preview').style.display='none';
+  C('ov-ob').classList.add('on');
+  setTimeout(()=>C('ob-real').focus(),320);
+}
+async function calibrateAndSave(){
+  const realStr=C('ob-real').value;
+  if(!realStr){toast('הכנס את היתרה האמיתית שלך');return;}
+  const real=parseFloat(realStr);
+  if(isNaN(real)||real<0){toast('הכנס סכום תקין');return;}
+  // חישוב יתרת פתיחה: מה שיש עכשיו פחות כל מה שהוזן
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
   const totalSav=getTotalSavings();
-  const total=ob+inc-exp+inv+totalSav+cashBalance;
-  C('ob-real-wrap').style.display='none';C('ob-real').value='';
-  C('ob-inp').value=ob||'';
-  C('ob-info').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem .6rem;font-size:.75rem">
-    <span style="color:var(--txt2)">פתיחה:</span><span>₪${fmt(ob)}</span>
-    <span style="color:var(--txt2)">+הכנסות:</span><span style="color:var(--grn)">₪${fmt(inc)}</span>
-    <span style="color:var(--txt2)">−הוצאות:</span><span style="color:var(--red)">₪${fmt(exp)}</span>
-    <span style="color:var(--txt2)">+יעדים:</span><span style="color:var(--grn)">₪${fmt(totalSav)}</span>
-    <span style="color:var(--txt2)">+השקעות:</span><span style="color:var(--pur)">₪${fmt(inv)}</span>
-    <span style="font-weight:700">= יתרה:</span>
-    <span style="font-weight:700;color:${total<0?'var(--red)':'var(--grn)'}">${total<0?'-':''}₪${fmt(Math.abs(total))}</span>
+  const newOb=parseFloat((real-inc+exp-inv-totalSav-cashBalance).toFixed(2));
+  // הצג preview
+  const prev=C('ob-calc-preview');
+  prev.style.display='block';
+  prev.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem">
+    <span style="color:var(--txt2)">יתרה בפועל:</span><span style="color:var(--grn);font-weight:700">₪${fmt(real)}</span>
+    <span style="color:var(--txt2)">התאמה:</span><span style="color:${newOb>=0?'var(--grn)':'var(--red)'}">${newOb>=0?'+':''}₪${fmt(newOb)}</span>
   </div>`;
-  C('ov-ob').classList.add('on');
-  setTimeout(()=>C('ob-inp').focus(),320);
+  ob=newOb;
+  const {error:obErr}=await sb.from('family_settings').upsert({family_id:profile.family_id,opening_balance:ob,updated_at:new Date().toISOString()});
+  if(obErr){toast('שגיאה: '+obErr.message);return;}
+  C('ov-ob').classList.remove('on');
+  render();
+  toast('✓ יתרה כוילה ל-₪'+fmt(real));
 }
 async function saveOb(){
   ob=parseFloat(C('ob-inp').value)||0;
@@ -3057,22 +3074,8 @@ function goTab(name){
   else render();
 }
 
-// ════ FIX: setRealBalance fixed ════
-function setRealBalance(){
-  const realStr=C('ob-real').value;
-  if(!realStr){C('ob-real-wrap').style.display='flex';setTimeout(()=>C('ob-real').focus(),100);return;}
-  const real=parseFloat(realStr);
-  if(isNaN(real)){toast('הכנס סכום תקין');return;}
-  const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
-  ob=parseFloat((real-inc+exp-inv-getTotalSavings()-cashBalance).toFixed(2));
-  C('ob-inp').value=Math.round(ob);
-  C('ob-real-wrap').style.display='none';
-  C('ob-real').value='';
-  toast('✓ חושב — לחץ שמור לאישור');
-  C('ob-real-wrap').style.display='none';
-  C('ob-real').value='';
-  toast('✓ חושב — לחץ שמור לאישור');
-}
+// setRealBalance - legacy stub (replaced by calibrateAndSave)
+function setRealBalance(){calibrateAndSave();}
 </script>
 </body>
 </html>
