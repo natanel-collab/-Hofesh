@@ -24,6 +24,19 @@
 <style>
 /* Hide invest tab */
 #tb-invest{display:none!important}
+
+/* ═══ REACTIONS ═══ */
+.react-row{display:flex;gap:.4rem;padding:.15rem .85rem .55rem 49px;flex-wrap:wrap}
+.react-chip{border-radius:100px;padding:.2rem .6rem;font-size:.85rem;display:flex;align-items:center;gap:.25rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:transform .15s,background .15s}
+.react-chip:active{transform:scale(0.9)}
+.react-chip.mine{background:rgba(48,209,88,0.15);border-color:rgba(48,209,88,0.35)}
+.react-chip .rc-cnt{font-size:.7rem;font-weight:700;color:var(--txt)}
+.react-picker-ov{position:fixed;inset:0;z-index:550;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
+.react-picker-ov.on{display:flex}
+.react-picker{background:linear-gradient(145deg,#1a2a1a,#0f1f0f);border:1px solid rgba(255,255,255,0.15);border-radius:100px;padding:.85rem 1.2rem;display:flex;gap:1rem;box-shadow:0 20px 60px rgba(0,0,0,0.6);animation:rpPop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rpPop{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.react-picker span{font-size:2rem;cursor:pointer;transition:transform .15s}
+.react-picker span:active{transform:scale(1.3)}
 .date-badge{font-size:.72rem;font-weight:800;color:var(--grn);background:var(--grn-d);border:1px solid var(--grn-b);padding:.15rem .7rem;border-radius:100px}
 
 /* ═══ WRAPPED STORIES ═══ */
@@ -1257,6 +1270,11 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button onclick="saveInvest()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--pur);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">עדכן שווי תיק</button>
   </div></div>
 
+  <!-- REACTION PICKER -->
+  <div class="react-picker-ov" id="react-picker-ov" onclick="if(event.target===this)closeReactPicker()">
+    <div class="react-picker" id="react-picker"></div>
+  </div>
+
   <!-- WRAPPED STORIES -->
   <div class="wrapped-ov" id="wrapped-ov">
     <div class="wrapped-bars" id="wrapped-bars"></div>
@@ -1464,6 +1482,7 @@ const DEFAULT_CATS={
 // ════ APP STATE ════
 let user=null, profile=null, family=null, familySettings=null;
 let histView='date';
+let txReactions={};
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -1876,14 +1895,19 @@ async function loadUserData(){
   family=fam;
 
   // load all data in parallel
-  const [txRes,budRes,goalRes,settRes]=await Promise.all([
+  const [txRes,budRes,goalRes,settRes,reactRes]=await Promise.all([
     sb.from('transactions').select('*').eq('family_id',profile.family_id).order('date',{ascending:false}),
     sb.from('budgets').select('*').eq('family_id',profile.family_id),
     sb.from('goals').select('*').eq('family_id',profile.family_id),
-    sb.from('family_settings').select('*').eq('family_id',profile.family_id).single()
+    sb.from('family_settings').select('*').eq('family_id',profile.family_id).single(),
+    sb.from('tx_reactions').select('*').eq('family_id',profile.family_id)
   ]);
 
   txs=(txRes.data||[]).map(t=>({...t,amount:parseFloat(t.amount)}));
+  txReactions={};
+  (reactRes?.data||[]).forEach(r=>{
+    (txReactions[r.transaction_id]=txReactions[r.transaction_id]||[]).push(r);
+  });
   buds={...DBUD};
   (budRes.data||[]).forEach(b=>{buds[b.category]=parseFloat(b.amount);});
   goals=(goalRes.data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
@@ -2062,6 +2086,14 @@ function subscribeRealtime(){
           render();
         }
       })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'tx_reactions',filter:`family_id=eq.${profile.family_id}`},
+      async()=>{
+        const {data}=await sb.from('tx_reactions').select('*').eq('family_id',profile.family_id);
+        txReactions={};
+        (data||[]).forEach(r=>{(txReactions[r.transaction_id]=txReactions[r.transaction_id]||[]).push(r);});
+        renderHistory();
+      })
     .subscribe(status=>{
       console.log('Realtime status:',status);
     });
@@ -2233,7 +2265,9 @@ function mkTx(t,i){
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
   const whoTag=t.user_name?`<span class="tx-who">${esc(t.user_name)}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
-    <div class="tx" onclick="toggleTxActions('${t.id}')">
+    <div class="tx" onclick="toggleTxActions('${t.id}')"
+      ontouchstart="startLongPress('${t.id}',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+      oncontextmenu="event.preventDefault();openReactPicker('${t.id}');return false">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
         <div class="tx-name">${esc(t.description||t.category)}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
@@ -2248,6 +2282,7 @@ function mkTx(t,i){
       <button onclick="delTx('${t.id}')"
         style="flex:1;padding:.45rem;border-radius:8px;background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">🗑 מחיקה</button>
     </div>
+    ${renderReactions(t.id)}
   </div>`;
 }
 
@@ -2361,6 +2396,73 @@ function editGoalSaved(id){
   C('gp-inp').value=g.saved||0;C('gp-sub').style.background='var(--blu)';C('gp-sub').textContent='עדכן';
   C('ov-gp').classList.add('on');setTimeout(()=>C('gp-inp').focus(),320);
 }
+// ═══ REACTIONS ═══
+const REACT_EMOJIS=['❤️','👍','🔥','😂','😮'];
+let _reactTxId=null;
+let _longPressTimer=null;
+
+function renderReactions(txId){
+  const rs=txReactions[txId]||[];
+  if(!rs.length)return '';
+  const byEmoji={};
+  rs.forEach(r=>{(byEmoji[r.emoji]=byEmoji[r.emoji]||[]).push(r);});
+  const chips=Object.entries(byEmoji).map(([emoji,list])=>{
+    const mine=list.some(r=>String(r.user_id)===String(user.id));
+    return `<span class="react-chip ${mine?'mine':''}" onclick="event.stopPropagation();toggleReaction('${txId}','${emoji}')">${emoji}<span class="rc-cnt">${list.length}</span></span>`;
+  }).join('');
+  return `<div class="react-row">${chips}</div>`;
+}
+
+function startLongPress(txId,ev){
+  clearTimeout(_longPressTimer);
+  _longPressTimer=setTimeout(()=>{
+    openReactPicker(txId);
+    if(navigator.vibrate)navigator.vibrate(15);
+  },500);
+}
+function cancelLongPress(){clearTimeout(_longPressTimer);}
+
+function openReactPicker(txId){
+  _reactTxId=txId;
+  C('react-picker').innerHTML=REACT_EMOJIS.map(e=>
+    `<span onclick="pickReaction('${e}')">${e}</span>`
+  ).join('');
+  C('react-picker-ov').classList.add('on');
+}
+function closeReactPicker(){
+  C('react-picker-ov').classList.remove('on');
+  _reactTxId=null;
+}
+function pickReaction(emoji){
+  const id=_reactTxId;
+  closeReactPicker();
+  if(id)toggleReaction(id,emoji);
+}
+
+async function toggleReaction(txId,emoji){
+  const existing=(txReactions[txId]||[]).find(r=>String(r.user_id)===String(user.id));
+  // Same emoji -> toggle off
+  if(existing&&existing.emoji===emoji){
+    txReactions[txId]=(txReactions[txId]||[]).filter(r=>String(r.user_id)!==String(user.id));
+    renderHistory();
+    const {error}=await sb.from('tx_reactions').delete().eq('transaction_id',txId).eq('user_id',user.id);
+    if(error){toast('שגיאה בהסרת תגובה');await loadUserData();}
+    return;
+  }
+  // Optimistic update
+  txReactions[txId]=(txReactions[txId]||[]).filter(r=>String(r.user_id)!==String(user.id));
+  txReactions[txId].push({transaction_id:txId,user_id:user.id,emoji,family_id:profile.family_id});
+  renderHistory();
+  if(navigator.vibrate)navigator.vibrate(10);
+  const {error}=await sb.from('tx_reactions').upsert({
+    transaction_id:parseInt(txId),
+    user_id:user.id,
+    family_id:profile.family_id,
+    emoji
+  },{onConflict:'transaction_id,user_id'});
+  if(error){toast('שגיאה בשמירת תגובה');await loadUserData();}
+}
+
 // ═══ WRAPPED STORIES ═══
 let _wrapIdx=0,_wrapTimer=null,_wrapSlides=[];
 const WRAP_DURATION=5000;
