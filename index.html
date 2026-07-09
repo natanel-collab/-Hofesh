@@ -182,13 +182,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ══ TAB BAR ══ */
 #tabbar{
-  flex-shrink:0;display:flex;
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;
+  display:flex;
   background:var(--tab-bg);
   backdrop-filter:blur(24px) saturate(180%);
   -webkit-backdrop-filter:blur(24px) saturate(180%);
   border-top:1px solid var(--border);
   padding:.4rem 0 calc(.4rem + env(safe-area-inset-bottom,0px));
-  z-index:10;position:relative;
+  z-index:10;
 }
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.18rem;
   padding:.25rem 0;background:none;border:none;cursor:pointer;font-family:inherit;
@@ -204,7 +206,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ══ FAB ══ */
-#fab{position:absolute;bottom:calc(64px + env(safe-area-inset-bottom,0px));left:50%;
+#fab{position:fixed;bottom:calc(64px + env(safe-area-inset-bottom,0px));left:50%;
   transform:translateX(-50%);width:54px;height:54px;border-radius:50%;
   background:var(--txt);color:var(--bg);font-size:1.6rem;font-weight:300;
   border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -880,7 +882,8 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
             <div class="bal-item-val" style="color:var(--red)" id="m-exp">₪0</div>
             <div id="m-exp-future" style="font-size:.62rem;color:#ffd60a;margin-top:.2rem;display:none">+₪0 עתידי</div>
           </div>
-          <div class="bal-item">
+          <div class="bal-item" onclick="openInvestModal()" style="cursor:pointer;position:relative">
+            <div style="position:absolute;top:.25rem;left:.4rem;font-size:.55rem;color:var(--pur);opacity:.7">✎</div>
             <div class="bal-item-lbl"><div class="bal-dot" style="background:var(--pur)"></div>השקעות</div>
             <div class="bal-item-val" style="color:var(--pur)" id="m-inv">₪0</div>
           </div>
@@ -1243,6 +1246,17 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button onclick="saveCash()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--ylw);color:#000;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">שמור</button>
   </div></div>
 
+  <!-- INVEST PORTFOLIO MODAL -->
+  <div class="ov" id="ov-invest" onclick="if(event.target===this)C('ov-invest').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div><div class="sh-title">📈 תיק השקעות</div>
+    <p style="font-size:.82rem;color:var(--txt2);text-align:center;margin-bottom:.85rem;line-height:1.6">מה השווי הנוכחי של התיק? (מהבנק/ברוקר)<br><span style="font-size:.7rem;color:var(--pur)">השאירו ריק = חישוב אוטומטי מסכום ההשקעות</span></p>
+    <div class="field"><span class="fi">📈</span>
+      <input type="number" id="invest-inp" placeholder="שווי התיק הנוכחי" min="0" step="1"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
+    <button onclick="saveInvest()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--pur);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">עדכן שווי תיק</button>
+  </div></div>
+
   <!-- WRAPPED STORIES -->
   <div class="wrapped-ov" id="wrapped-ov">
     <div class="wrapped-bars" id="wrapped-bars"></div>
@@ -1456,6 +1470,7 @@ let cM=now.getMonth(), cY=now.getFullYear();
 let aType='expense', eType='expense', aAmt='0', aCur='ILS';
 let budEdit=false, period='month', hf='all', catEdit=false;
 let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
+let investBalance=localStorage.getItem('hofesh-invest')!==null&&localStorage.getItem('hofesh-invest')!==''?parseFloat(localStorage.getItem('hofesh-invest')):null;
 
 const C=id=>document.getElementById(id);
 // Offline indicator
@@ -1712,6 +1727,30 @@ async function saveCash(){
   toast(cashErr?'⚠️ נשמר מקומית בלבד — בדקו חיבור':'מזומן עודכן ✓');
 }
 
+function openInvestModal(){
+  C('invest-inp').value=investBalance!=null?investBalance:'';
+  C('ov-invest').classList.add('on');
+  setTimeout(()=>C('invest-inp').focus(),320);
+}
+async function saveInvest(){
+  const raw=C('invest-inp').value.trim();
+  investBalance=raw===''?null:Math.max(0,parseFloat(raw)||0);
+  if(investBalance===null)localStorage.removeItem('hofesh-invest');
+  else localStorage.setItem('hofesh-invest',investBalance);
+  let invErr=null;
+  if(profile?.family_id){
+    const {error}=await sb.from('family_settings').upsert({
+      family_id:profile.family_id,
+      invest_balance:investBalance,
+      updated_at:new Date().toISOString()
+    },{onConflict:'family_id'});
+    invErr=error;
+  }
+  C('ov-invest').classList.remove('on');
+  render();
+  toast(invErr?'⚠️ נשמר מקומית בלבד — בדקו חיבור':investBalance===null?'חזרה לחישוב אוטומטי ✓':'שווי התיק עודכן ✓');
+}
+
 async function removeFamilyMember(memberId, memberName){
   if(!confirm(`להסיר את ${memberName} מהמשפחה?
 העסקאות שלו יישארו אך הוא לא יוכל לראות או להוסיף נתונים.`))return;
@@ -1854,6 +1893,11 @@ async function loadUserData(){
   if(familySettings?.cash_balance!=null){
     cashBalance=parseFloat(familySettings.cash_balance||0);
     localStorage.setItem('hofesh-cash',cashBalance);
+  }
+  if(familySettings&&'invest_balance' in familySettings){
+    investBalance=familySettings.invest_balance!=null?parseFloat(familySettings.invest_balance):null;
+    if(investBalance===null)localStorage.removeItem('hofesh-invest');
+    else localStorage.setItem('hofesh-invest',investBalance);
   }
 
   // update nav user avatar
@@ -2006,7 +2050,17 @@ function subscribeRealtime(){
       {event:'*',schema:'public',table:'family_settings',filter:`family_id=eq.${profile.family_id}`},
       async()=>{
         const {data}=await sb.from('family_settings').select('*').eq('family_id',profile.family_id).single();
-        if(data){ob=parseFloat(data.opening_balance||0);render();}
+        if(data){
+          ob=parseFloat(data.opening_balance||0);
+          if(data.cash_balance!=null){
+            cashBalance=parseFloat(data.cash_balance||0);
+            localStorage.setItem('hofesh-cash',cashBalance);
+          }
+          investBalance=data.invest_balance!=null?parseFloat(data.invest_balance):null;
+          if(investBalance===null)localStorage.removeItem('hofesh-invest');
+          else localStorage.setItem('hofesh-invest',investBalance);
+          render();
+        }
       })
     .subscribe(status=>{
       console.log('Realtime status:',status);
@@ -2651,7 +2705,7 @@ function renderBalance(){
     if(futureExp>0){fe.textContent='+₪'+fmt(futureExp)+' עתידי';fe.style.display='block';}
     else fe.style.display='none';
   }
-  C('m-inv').textContent='₪'+fmt(sumT(txs,'invest')); // all-time invest
+  C('m-inv').textContent='₪'+fmt(investBalance!=null?investBalance:sumT(txs,'invest')); // portfolio value or tx sum
   C('m-sav').textContent='₪'+fmt(totalSav);
   const cashEl=C('m-cash');if(cashEl)cashEl.textContent='₪'+fmt(cashBalance);
   const ms=new Set(txs.filter(t=>t.type==='expense').map(t=>{const d=new Date(t.date);return d.getMonth()+'-'+d.getFullYear();})).size||1;
