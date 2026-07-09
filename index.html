@@ -24,6 +24,7 @@
 <style>
 /* Hide invest tab */
 #tb-invest{display:none!important}
+.date-badge{font-size:.72rem;font-weight:800;color:var(--grn);background:var(--grn-d);border:1px solid var(--grn-b);padding:.15rem .7rem;border-radius:100px}
 
 /* ═══ WRAPPED STORIES ═══ */
 .wrapped-ov{position:fixed;inset:0;z-index:600;background:#000;opacity:0;pointer-events:none;
@@ -133,7 +134,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 [data-theme="light"] .glow-2{background:radial-gradient(circle,rgba(10,132,255,0.15),transparent 70%)}
 
 /* ══ APP SHELL ══ */
-#app{display:flex;flex-direction:column;height:100svh;max-width:430px;
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;
   margin:0 auto;position:relative;opacity:0;transition:opacity .3s;z-index:1}
 #app.show{opacity:1}
 #safe-top{flex-shrink:0;height:env(safe-area-inset-top,0px);background:transparent;width:100%}
@@ -688,19 +689,59 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       }
     };
 
+    var _activePollIv=null; // single global poll interval (prevents leaks)
     function channel(name){
-      var _subs=[],_iv=null;
-      var ch={
-        on:function(type,opts,cb){_subs.push({table:opts&&opts.table,cb:cb});return ch;},
-        subscribe:function(cb){
-          if(cb)cb('SUBSCRIBED');
-          _iv=setInterval(function(){
-            _subs.forEach(function(sub){
-              if(sub.table){
-                doFetch('GET','/rest/v1/'+sub.table+'?select=id&limit=1').then(function(){});
+      var _subs=[],_snapshots={};
+      function pollTable(table,filter){
+        var qs='?select=*'+(filter?'&'+filter:'');
+        return doFetch('GET','/rest/v1/'+table+qs).then(function(r){
+          if(!r||!r.data||!Array.isArray(r.data))return;
+          var prev=_snapshots[table];
+          var cur={};
+          r.data.forEach(function(row){cur[row.id]=JSON.stringify(row);});
+          if(prev){
+            // Detect INSERTs & UPDATEs
+            r.data.forEach(function(row){
+              if(!(row.id in prev)){
+                _subs.forEach(function(s){
+                  if(s.table===table&&(s.event==='INSERT'||s.event==='*'))s.cb({eventType:'INSERT',new:row,old:{}});
+                });
+              } else if(prev[row.id]!==cur[row.id]){
+                _subs.forEach(function(s){
+                  if(s.table===table&&(s.event==='UPDATE'||s.event==='*'))s.cb({eventType:'UPDATE',new:row,old:{id:row.id}});
+                });
               }
             });
-          },5000);
+            // Detect DELETEs
+            Object.keys(prev).forEach(function(id){
+              if(!(id in cur)){
+                _subs.forEach(function(s){
+                  if(s.table===table&&(s.event==='DELETE'||s.event==='*'))s.cb({eventType:'DELETE',new:{},old:{id:isNaN(id)?id:parseInt(id)}});
+                });
+              }
+            });
+          }
+          _snapshots[table]=cur;
+        }).catch(function(){});
+      }
+      var ch={
+        on:function(type,opts,cb){
+          _subs.push({table:opts&&opts.table,event:(opts&&opts.event)||'*',filter:opts&&opts.filter,cb:cb});
+          return ch;
+        },
+        subscribe:function(cb){
+          if(cb)cb('SUBSCRIBED');
+          // Clear previous global interval (prevents duplicate polling)
+          if(_activePollIv)clearInterval(_activePollIv);
+          // Unique tables with their filters
+          var tables={};
+          _subs.forEach(function(s){if(s.table&&!tables[s.table])tables[s.table]=s.filter;});
+          // Initial snapshot (no events fired)
+          Object.keys(tables).forEach(function(t){pollTable(t,tables[t]);});
+          _activePollIv=setInterval(function(){
+            if(document.hidden)return; // save battery when backgrounded
+            Object.keys(tables).forEach(function(t){pollTable(t,tables[t]);});
+          },6000);
           return ch;
         }
       };
@@ -879,6 +920,14 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="motiv-content"></div>
       </div>
 
+      <div class="card glass" id="inv-card" style="display:none">
+        <div class="card-head" style="display:flex;justify-content:space-between;align-items:center">
+          <span>📈 השקעות</span>
+          <span id="inv-total" style="font-size:.85rem;color:var(--grn);font-weight:700">סה"כ: ₪0</span>
+        </div>
+        <div id="inv-breakdown" style="display:flex;flex-direction:column;gap:.5rem"></div>
+      </div>
+
       <div onclick="openWrapped()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
         background:linear-gradient(135deg,rgba(191,90,242,0.15),rgba(10,132,255,0.12));
         border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:.8rem;margin-bottom:.75rem;
@@ -981,6 +1030,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <button class="ptog-btn" id="hf-exp" onclick="setHF('exp')">הוצאות</button>
         <button class="ptog-btn" id="hf-inc" onclick="setHF('inc')">הכנסות</button>
         <button class="ptog-btn" id="hf-inv" onclick="setHF('inv')">השקעות</button>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-bottom:.65rem">
+        <button class="ptog-btn on" id="hv-date" onclick="setHistView('date')" style="flex:0 0 auto;padding:.35rem .9rem">📅 לפי ימים</button>
+        <button class="ptog-btn" id="hv-cat" onclick="setHistView('cat')" style="flex:0 0 auto;padding:.35rem .9rem">🏷️ לפי קטגוריה</button>
       </div>
       <div id="hist-results-count" style="font-size:.7rem;color:var(--txt2);margin-bottom:.5rem;display:none"></div>
       <div id="hist-body"></div>
@@ -1396,6 +1449,7 @@ const DEFAULT_CATS={
 
 // ════ APP STATE ════
 let user=null, profile=null, family=null, familySettings=null;
+let histView='date';
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -1404,6 +1458,21 @@ let budEdit=false, period='month', hf='all', catEdit=false;
 let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 
 const C=id=>document.getElementById(id);
+// Offline indicator
+window.addEventListener('offline',()=>{
+  if(!document.getElementById('offline-banner')){
+    const b=document.createElement('div');
+    b.id='offline-banner';
+    b.textContent='📡 אין חיבור לאינטרנט — שינויים לא יישמרו';
+    b.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;background:#3a2e15;color:#ffd60a;font-size:.75rem;font-weight:700;text-align:center;padding:.5rem;z-index:900;font-family:inherit';
+    document.body.appendChild(b);
+  }
+});
+window.addEventListener('online',()=>{
+  document.getElementById('offline-banner')?.remove();
+  toast('החיבור חזר ✓');
+});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Number(n).toLocaleString('he-IL',{maximumFractionDigits:0});
 const mTxs=(m=cM,y=cY)=>txs.filter(t=>{
   const dStr=t.date?.substring(0,10)||'';
@@ -1606,13 +1675,6 @@ function setTheme(theme){
   }
 }
 
-async function removeMember(id,name){
-  if(!confirm('להסיר את '+name+'?'))return;
-  await sb.from('profiles').update({family_id:null,family_code:null}).eq('id',id);
-  toast(name+' הוסר ✓');
-  openProfile();
-}
-
 function leaveFamily(){
   C('ov-profile').classList.remove('on');
   const ov=document.createElement('div');
@@ -1636,16 +1698,18 @@ async function saveCash(){
   cashBalance=parseFloat(C('cash-inp').value)||0;
   localStorage.setItem('hofesh-cash',cashBalance);
   // Also save to Supabase so it persists across devices
+  let cashErr=null;
   if(profile?.family_id){
-    await sb.from('family_settings').upsert({
+    const {error}=await sb.from('family_settings').upsert({
       family_id:profile.family_id,
       cash_balance:cashBalance,
       updated_at:new Date().toISOString()
     },{onConflict:'family_id'});
+    cashErr=error;
   }
   C('ov-cash').classList.remove('on');
   render();
-  toast('מזומן עודכן ✓');
+  toast(cashErr?'⚠️ נשמר מקומית בלבד — בדקו חיבור':'מזומן עודכן ✓');
 }
 
 async function removeFamilyMember(memberId, memberName){
@@ -2012,9 +2076,12 @@ function nk(k){
   } else if(ucdEl) ucdEl.style.display='none';
 }
 
+let _txSaving=false;
 async function addTx(){
+  if(_txSaving)return; // prevent double-submit
   let amt=parseFloat(C('a-amt').value||aAmt);
   if(!amt||amt<=0){toast('הכנס סכום תקין');return;}
+  _txSaving=true;
   const desc=C('a-desc').value.trim();
   const cat=C('a-cat').value;
   const date=C('a-date').value||new Date().toISOString().split('T')[0];
@@ -2032,6 +2099,7 @@ async function addTx(){
   };
   C('a-sub').textContent='שומר...';
   const {data:newTx,error}=await sb.from('transactions').insert(row).select().single();
+  _txSaving=false;
   if(error){toast('שגיאה: '+error.message);setAT(aType);return;}
   // Add to local array immediately - no need to wait for realtime
   txs.unshift({...newTx,amount:parseFloat(newTx.amount)});
@@ -2109,12 +2177,12 @@ function mkTx(t,i){
   const ds=d.toLocaleDateString('he-IL',{day:'numeric',month:'short'});
   const sign=t.type==='expense'?'-':'+';
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
-  const whoTag=t.user_name?`<span class="tx-who">${t.user_name}</span>`:'';
+  const whoTag=t.user_name?`<span class="tx-who">${esc(t.user_name)}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
     <div class="tx" onclick="toggleTxActions('${t.id}')">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
-        <div class="tx-name">${t.description||t.category}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
+        <div class="tx-name">${esc(t.description||t.category)}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
         <div class="tx-meta">${ds} · ${t.category}${whoTag?'&nbsp;'+whoTag:''}</div>
       </div>
       <div class="tx-amt" style="color:${col}">${sign}₪${fmt(t.amount)}</div>
@@ -2623,25 +2691,39 @@ function renderWeekBars(){
 }
 
 function renderInvPortfolio(){
+  const card=C('inv-card');
+  if(!card)return; // safety guard
   const invs=txs.filter(t=>t.type==='invest');
-  if(!invs.length){C('inv-card').style.display='none';return;}
-  C('inv-card').style.display='block';
-  const total=invs.reduce((s,t)=>s+t.amount,0);
-  C('inv-total').textContent='סה"כ: ₪'+fmt(total);
+  if(!invs.length){card.style.display='none';return;}
+  card.style.display='block';
+  const totalNIS=invs.reduce((s,t)=>s+t.amount,0);
+  let totalUSD=0;
+  invs.forEach(t=>{
+    const m=(t.description||'').match(/\$([\d.]+)/);
+    if(m)totalUSD+=parseFloat(m[1]);
+  });
+  let totalText='סה"כ: ₪'+fmt(totalNIS);
+  if(totalUSD>0)totalText='₪'+fmt(totalNIS)+' • $'+fmt(totalUSD);
+  if(C('inv-total'))C('inv-total').textContent=totalText;
   const groups={};
   invs.forEach(t=>{
-    // Strip dollar amounts from description for grouping: "S&P ($1154)" -> "S&P"
     const raw=t.description||t.category;
     const k=raw.replace(/\s*\(\$[\d.]+\)\s*/g,'').trim()||t.category;
-    (groups[k]=groups[k]||[]).push(t);
+    if(!groups[k])groups[k]={nis:0,usd:0};
+    groups[k].nis+=t.amount;
+    const m=(t.description||'').match(/\$([\d.]+)/);
+    if(m)groups[k].usd+=parseFloat(m[1]);
   });
-  C('inv-list').innerHTML=Object.entries(groups).map(([n,items])=>{
-    const sum=items.reduce((s,t)=>s+t.amount,0);
-    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:.5px solid var(--b1)">
-      <div style="width:30px;height:30px;border-radius:9px;background:var(--pur-d);display:flex;align-items:center;justify-content:center;font-size:.85rem">📈</div>
-      <div style="flex:1"><div style="font-size:.8rem;font-weight:500">${n}</div><div style="font-size:.65rem;color:var(--txt2)">${Math.round(sum/total*100)}% מהתיק</div></div>
-      <div style="font-size:.85rem;font-weight:700;color:var(--pur)">₪${fmt(sum)}</div>
-    </div>`;}).join('');
+  const items=Object.entries(groups).sort((a,b)=>b[1].nis-a[1].nis);
+  if(C('inv-breakdown'))C('inv-breakdown').innerHTML=items.map(([name,v])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;background:rgba(255,255,255,0.04);border-radius:10px;border:.5px solid rgba(255,255,255,0.06)">
+      <div style="font-size:.85rem;font-weight:600">${esc(name)}</div>
+      <div style="text-align:left">
+        <div style="font-size:.85rem;color:var(--grn);font-weight:700">₪${fmt(v.nis)}</div>
+        ${v.usd>0?`<div style="font-size:.7rem;color:var(--txt2)">$${fmt(v.usd)}</div>`:''}
+      </div>
+    </div>
+  `).join('');
 }
 
 function renderBudget(){
@@ -2761,6 +2843,12 @@ function renderStats(){
   C('insights').innerHTML=getInsights(pt).map(ins=>`<div class="ins" style="background:${ins.k==='good'?'var(--grn-d)':ins.k==='warn'?'var(--red-d)':'var(--s1)'};border:.5px solid ${ins.k==='good'?'var(--grn-b)':ins.k==='warn'?'var(--red-b)':'var(--b1)'}"><span class="ins-ico">${ins.i}</span><span class="ins-txt" style="color:${ins.k==='good'?'var(--grn)':ins.k==='warn'?'var(--red)':'var(--txt2)'}">${ins.t}</span></div>`).join('');
 }
 
+function setHistView(v){
+  histView=v;
+  C('hv-date')?.classList.toggle('on',v==='date');
+  C('hv-cat')?.classList.toggle('on',v==='cat');
+  renderHistory();
+}
 function renderHistory(){
   const typeMap={'all':null,'exp':'expense','inc':'income','inv':'invest'};
   const type=typeMap[hf];
@@ -2771,8 +2859,38 @@ function renderHistory(){
   if(!filtered.length){C('hist-body').innerHTML='';C('hist-empty').style.display='block';return;}
   C('hist-empty').style.display='none';
   if(q){C('hist-body').innerHTML=`<div class="tx-list">${[...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(mkTx).join('')}</div>`;return;}
-  const groups={};filtered.forEach(t=>{(groups[t.category]=groups[t.category]||[]).push(t);});
-  C('hist-body').innerHTML=Object.entries(groups).map(([cat,items])=>{const c=getAllCats()[cat]||getAllCats()['אחר'];const total=items.reduce((s,t)=>s+(t.type==='expense'?-t.amount:t.amount),0);return `<div class="cat-group"><div class="cat-group-head"><span style="font-size:.95rem">${c.i}</span><span style="font-size:.8rem;font-weight:600;flex:1">${cat}</span><span style="font-size:.78rem;font-weight:700;color:${total>=0?'var(--grn)':'var(--red)'}">₪${fmt(Math.abs(total))}</span></div><div class="tx-list">${items.map((t,i)=>mkTx(t,i)).join('')}</div></div>`;}).join('');
+  if(histView==='cat'){
+    // Group by category (legacy view)
+    const groups={};filtered.forEach(t=>{(groups[t.category]=groups[t.category]||[]).push(t);});
+    C('hist-body').innerHTML=Object.entries(groups).map(([cat,items])=>{
+      const c=getAllCats()[cat]||getAllCats()['אחר'];
+      const total=items.reduce((s,t)=>s+(t.type==='expense'?-t.amount:t.amount),0);
+      return `<div class="cat-group"><div class="cat-group-head"><span style="font-size:.95rem">${c.i}</span><span style="font-size:.8rem;font-weight:600;flex:1">${esc(cat)}</span><span style="font-size:.78rem;font-weight:700;color:${total<0?'var(--red)':'var(--grn)'}">${total<0?'-':'+'}₪${fmt(Math.abs(total))}</span></div><div class="tx-list">${items.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(mkTx).join('')}</div></div>`;
+    }).join('');
+    return;
+  }
+  // Group by DATE (default view) - newest first
+  const today=new Date().toISOString().split('T')[0];
+  const yesterday=new Date(Date.now()-864e5).toISOString().split('T')[0];
+  const groups={};
+  filtered.forEach(t=>{
+    const d=(t.date||'').substring(0,10);
+    (groups[d]=groups[d]||[]).push(t);
+  });
+  const sortedDays=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+  C('hist-body').innerHTML=sortedDays.map(day=>{
+    const items=groups[day];
+    const total=items.reduce((s,t)=>s+(t.type==='expense'?-t.amount:t.amount),0);
+    let label;
+    if(day===today)label='היום';
+    else if(day===yesterday)label='אתמול';
+    else{
+      const d=new Date(day+'T12:00:00');
+      label=d.toLocaleDateString('he-IL',{day:'numeric',month:'long'});
+      if(d.getFullYear()!==new Date().getFullYear())label+=' '+d.getFullYear();
+    }
+    return `<div class="cat-group"><div class="cat-group-head"><span class="date-badge">${label}</span><span style="flex:1"></span><span style="font-size:.78rem;font-weight:700;color:${total<0?'var(--red)':'var(--grn)'}">${total<0?'-':'+'}₪${fmt(Math.abs(total))}</span></div><div class="tx-list">${items.map(mkTx).join('')}</div></div>`;
+  }).join('');
 }
 
 function renderGoals(){
@@ -2806,7 +2924,7 @@ function render(){
   renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
   renderInvPortfolio();renderBudget();renderHomeTxs();
   renderStats();renderHistory();renderGoals();
-  if(C('v-invest').classList.contains('on'))renderInvestTab();
+  if(C('v-invest')&&C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
     el.textContent='$1 = ₪'+usd.toFixed(2);
