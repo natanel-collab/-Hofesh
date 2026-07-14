@@ -1216,12 +1216,12 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="ov" id="ov-ob" onclick="if(event.target===this)C('ov-ob').classList.remove('on')">
   <div class="sheet">
     <div class="sh-handle"></div>
-    <div class="sh-title">🎯 כיול יתרה</div>
-    <div style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.18);border-radius:12px;padding:.75rem .9rem;margin-bottom:.85rem">
-      <div style="font-size:.78rem;font-weight:600;color:var(--grn);margin-bottom:.25rem">איך זה עובד?</div>
-      <div style="font-size:.74rem;color:var(--txt2);line-height:1.6">הכנס את סך הכסף שיש לכם עכשיו בפועל — בכל החשבונות ביחד. האפליקציה תסתנכרן למציאות.</div>
+    <div class="sh-title">🏦 עדכון יתרת בנק</div>
+    <div style="background:rgba(94,169,255,0.07);border:1px solid rgba(94,169,255,0.2);border-radius:12px;padding:.75rem .9rem;margin-bottom:.6rem">
+      <div style="font-size:.74rem;color:var(--txt2);line-height:1.6">פתחו את אפליקציית הבנק והקלידו כמה יש שם עכשיו. עסקאות חדשות ימשיכו מהמספר הזה — ואם תפספסו עסקאות, פשוט תעדכנו שוב.</div>
+      <div id="bank-updated-lbl" style="font-size:.68rem;color:var(--txt3);margin-top:.45rem"></div>
     </div>
-    <div style="font-size:.72rem;color:var(--txt3);margin-bottom:.4rem;font-weight:500">סך כל הכסף שלכם עכשיו (₪)</div>
+    <div style="font-size:.72rem;color:var(--txt3);margin-bottom:.4rem;font-weight:500">כמה יש עכשיו בבנק? (₪)</div>
     <div class="field" style="margin-bottom:.85rem">
       <span class="fi">🏦</span>
       <input type="number" id="ob-real" placeholder="למשל: 4863" min="0" step="1"
@@ -1230,7 +1230,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
     <div id="ob-calc-preview" style="display:none;background:var(--surface);border-radius:10px;padding:.65rem .9rem;font-size:.75rem;color:var(--txt2);margin-bottom:.7rem"></div>
     <input type="hidden" id="ob-inp">
-    <button onclick="calibrateAndSave()" style="width:100%;margin-top:.1rem;padding:.88rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.95rem;font-weight:700;border:none;cursor:pointer">כייל ✓</button>
+    <button onclick="calibrateAndSave()" style="width:100%;margin-top:.1rem;padding:.88rem;border-radius:var(--rs);background:var(--grn);color:#000;font-family:inherit;font-size:.95rem;font-weight:700;border:none;cursor:pointer">עדכן יתרה ✓</button>
     <button onclick="C('ov-ob').classList.remove('on')" style="width:100%;margin-top:.45rem;padding:.72rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
     <div id="ob-info" style="display:none"></div>
     <div id="ob-real-wrap" style="display:none"></div>
@@ -1501,6 +1501,7 @@ let cM=now.getMonth(), cY=now.getFullYear();
 let aType='expense', eType='expense', aAmt='0', aCur='ILS';
 let budEdit=false, period='month', hf='all', catEdit=false;
 let aSource='balance';
+let bankAnchor=null, bankAnchorAt=null;
 let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 let investBalance=localStorage.getItem('hofesh-invest')!==null&&localStorage.getItem('hofesh-invest')!==''?parseFloat(localStorage.getItem('hofesh-invest')):null;
 
@@ -1545,6 +1546,21 @@ const sumInvFromBal=arr=>{
   const today=new Date().toISOString().split('T')[0];
   return arr.filter(t=>t.type==='invest'&&t.from_balance===true&&(t.date?.substring(0,10)<=today))
     .reduce((s,t)=>s+t.amount,0);
+};
+// Bank balance: anchor (user-calibrated) + net flow of transactions created AFTER calibration
+const calcBank=()=>{
+  if(bankAnchor===null)return ob+sumT(txs,'income')-sumT(txs,'expense')-sumInvFromBal(txs); // legacy (pre-calibration)
+  const today=new Date().toISOString().split('T')[0];
+  const flow=txs.filter(t=>
+    (t.date?.substring(0,10)<=today)&&
+    t.created_at&&new Date(t.created_at)>new Date(bankAnchorAt)
+  ).reduce((s,t)=>
+    s+(t.type==='income'?t.amount
+      :t.type==='expense'?-t.amount
+      :(t.type==='invest'&&t.from_balance===true)?-t.amount
+      :0)
+  ,0);
+  return bankAnchor+flow;
 };
 
 // ════ TOAST ════
@@ -1941,6 +1957,10 @@ async function loadUserData(){
     if(investBalance===null)localStorage.removeItem('hofesh-invest');
     else localStorage.setItem('hofesh-invest',investBalance);
   }
+  if(familySettings&&'bank_anchor' in familySettings){
+    bankAnchor=familySettings.bank_anchor!=null?parseFloat(familySettings.bank_anchor):null;
+    bankAnchorAt=familySettings.bank_anchor_at||null;
+  }
 
   // update nav user avatar
   const initials=(profile.name||user.email||'?')[0].toUpperCase();
@@ -2101,6 +2121,8 @@ function subscribeRealtime(){
           investBalance=data.invest_balance!=null?parseFloat(data.invest_balance):null;
           if(investBalance===null)localStorage.removeItem('hofesh-invest');
           else localStorage.setItem('hofesh-invest',investBalance);
+          bankAnchor=data.bank_anchor!=null?parseFloat(data.bank_anchor):null;
+          bankAnchorAt=data.bank_anchor_at||null;
           render();
         }
       })
@@ -2315,33 +2337,32 @@ function mkTx(t,i){
 
 // ════ CALIBRATE BALANCE ════
 function openOb(){
-  C('ob-real').value='';
+  C('ob-real').value=bankAnchor!==null?bankAnchor:'';
   C('ob-calc-preview').style.display='none';
+  const l=C('bank-updated-lbl');
+  if(l)l.textContent=bankAnchorAt
+    ?('עודכן לאחרונה: '+new Date(bankAnchorAt).toLocaleString('he-IL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))
+    :'עדכון ראשון — מכאן האפליקציה תתחיל לספור 👋';
   C('ov-ob').classList.add('on');
   setTimeout(()=>C('ob-real').focus(),320);
 }
 async function calibrateAndSave(){
   const realStr=C('ob-real').value;
-  if(!realStr){toast('הכנס את היתרה האמיתית שלך');return;}
+  if(!realStr){toast('הכנס את היתרה מהבנק');return;}
   const real=parseFloat(realStr);
-  if(isNaN(real)||real<0){toast('הכנס סכום תקין');return;}
-  // חישוב יתרת פתיחה: מה שיש עכשיו פחות כל מה שהוזן
-  const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
-  const totalSav=getTotalSavings();
-  const newOb=parseFloat((real-inc+exp-inv-totalSav-cashBalance).toFixed(2));
-  // הצג preview
-  const prev=C('ob-calc-preview');
-  prev.style.display='block';
-  prev.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .6rem">
-    <span style="color:var(--txt2)">יתרה בפועל:</span><span style="color:var(--grn);font-weight:700">₪${fmt(real)}</span>
-    <span style="color:var(--txt2)">התאמה:</span><span style="color:${newOb>=0?'var(--grn)':'var(--red)'}">${newOb>=0?'+':''}₪${fmt(newOb)}</span>
-  </div>`;
-  ob=newOb;
-  const {error:obErr}=await sb.from('family_settings').upsert({family_id:profile.family_id,opening_balance:ob,updated_at:new Date().toISOString()});
-  if(obErr){toast('שגיאה: '+obErr.message);return;}
+  if(isNaN(real)){toast('הכנס סכום תקין');return;}
+  bankAnchor=real;
+  bankAnchorAt=new Date().toISOString();
+  const {error}=await sb.from('family_settings').upsert({
+    family_id:profile.family_id,
+    bank_anchor:bankAnchor,
+    bank_anchor_at:bankAnchorAt,
+    updated_at:new Date().toISOString()
+  },{onConflict:'family_id'});
+  if(error){toast('שגיאה: '+error.message);return;}
   C('ov-ob').classList.remove('on');
   render();
-  toast('✓ יתרה כוילה ל-₪'+fmt(real));
+  toast('✓ היתרה עודכנה מול הבנק — ₪'+fmt(real));
 }
 async function saveOb(){
   ob=parseFloat(C('ob-inp').value)||0;
@@ -2818,9 +2839,9 @@ function renderMotivation(){
 function renderBalance(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
   const totalSav=getTotalSavings();
-  const invFromBal=sumInvFromBal(txs);
-  const total=ob+inc-exp-invFromBal+totalSav+cashBalance;
-  C('ob-lbl').textContent=`פתיחה: ₪${fmt(ob)}`;
+  const bank=calcBank();
+  const total=bank+totalSav+cashBalance;
+  C('ob-lbl').textContent=bankAnchor!==null?`🏦 בנק: ₪${fmt(bank)}`:`פתיחה: ₪${fmt(ob)}`;
   C('bal-big').textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));
   C('bal-big').classList.toggle('neg',total<0);
   const nb=C('nav-bal');nb.textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));nb.className=total<0?'neg':'pos';
@@ -3323,7 +3344,7 @@ function renderPieCustom(svgId,legId,data){
 
 function getTotal(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
-  return ob+inc-exp-sumInvFromBal(txs)+getTotalSavings()+cashBalance;
+  return calcBank()+getTotalSavings()+cashBalance;
 }
 
 // ════ NEW: CHANGE NAME ════
