@@ -26,6 +26,7 @@
 #tb-invest{display:none!important}
 
 /* ═══ REACTIONS ═══ */
+.tx{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .react-row{display:flex;gap:.4rem;padding:.15rem .85rem .55rem 49px;flex-wrap:wrap}
 .react-chip{border-radius:100px;padding:.2rem .6rem;font-size:.85rem;display:flex;align-items:center;gap:.25rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:transform .15s,background .15s}
 .react-chip:active{transform:scale(0.9)}
@@ -1283,7 +1284,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   </div></div>
 
   <!-- REACTION PICKER -->
-  <div class="react-picker-ov" id="react-picker-ov" onclick="if(event.target===this)closeReactPicker()">
+  <div class="react-picker-ov" id="react-picker-ov" onclick="if(event.target===this&&Date.now()-_pickerOpenedAt>450)closeReactPicker()">
     <div class="react-picker" id="react-picker"></div>
   </div>
 
@@ -2287,6 +2288,7 @@ function te(e,id){
   else rw(w);
 }
 function toggleTxActions(id){
+  if(_suppressNextClick){_suppressNextClick=false;return;} // ghost click after long-press
   const w=C('txw-'+id);
   if(!w)return;
   const isOpen=w.classList.contains('sw');
@@ -2314,9 +2316,7 @@ function mkTx(t,i){
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
   const whoTag=t.user_name?`<span class="tx-who">${esc(t.user_name)}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
-    <div class="tx" onclick="toggleTxActions('${t.id}')"
-      ontouchstart="startLongPress('${t.id}',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
-      oncontextmenu="event.preventDefault();openReactPicker('${t.id}');return false">
+    <div class="tx" data-txid="${t.id}" onclick="toggleTxActions('${t.id}')">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
         <div class="tx-name">${esc(t.description||t.category)}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
@@ -2461,16 +2461,34 @@ function renderReactions(txId){
   return `<div class="react-row">${chips}</div>`;
 }
 
-function startLongPress(txId,ev){
-  clearTimeout(_longPressTimer);
-  _longPressTimer=setTimeout(()=>{
-    openReactPicker(txId);
-    if(navigator.vibrate)navigator.vibrate(15);
-  },500);
-}
-function cancelLongPress(){clearTimeout(_longPressTimer);}
+let _suppressNextClick=false;
+let _pickerOpenedAt=0;
+// Delegated long-press: one document-level listener, survives re-renders, no inline handlers
+(function(){
+  document.addEventListener('touchstart',e=>{
+    const tx=e.target&&e.target.closest?e.target.closest('.tx[data-txid]'):null;
+    if(!tx)return;
+    const id=tx.getAttribute('data-txid');
+    clearTimeout(_longPressTimer);
+    _longPressTimer=setTimeout(()=>{
+      _suppressNextClick=true; // swallow the ghost click that follows long-press on iOS
+      openReactPicker(id);
+      if(navigator.vibrate)navigator.vibrate(15);
+    },500);
+  },{passive:true});
+  ['touchend','touchmove','touchcancel'].forEach(ev=>
+    document.addEventListener(ev,()=>clearTimeout(_longPressTimer),{passive:true})
+  );
+  document.addEventListener('contextmenu',e=>{
+    const tx=e.target&&e.target.closest?e.target.closest('.tx[data-txid]'):null;
+    if(!tx)return;
+    e.preventDefault();
+    openReactPicker(tx.getAttribute('data-txid'));
+  });
+})();
 
 function openReactPicker(txId){
+  _pickerOpenedAt=Date.now();
   _reactTxId=txId;
   C('react-picker').innerHTML=REACT_EMOJIS.map(e=>
     `<span onclick="pickReaction('${e}')">${e}</span>`
