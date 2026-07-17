@@ -27,6 +27,13 @@
 
 /* ═══ REACTIONS ═══ */
 .tx{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* ═══ MULTI-SELECT ═══ */
+.tx-ck{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:all .15s}
+.tx-ck.on{background:var(--blu);border-color:var(--blu)}
+.tx.tx-selected{background:rgba(10,132,255,0.1);box-shadow:inset 0 0 0 1px rgba(10,132,255,0.35);border-radius:12px}
+#select-bar{position:fixed;bottom:calc(64px + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:406px;background:linear-gradient(145deg,#13231a,#0c1810);border:1px solid rgba(10,132,255,0.35);border-radius:16px;padding:.5rem;display:none;gap:.45rem;align-items:center;z-index:60;box-shadow:0 14px 40px rgba(0,0,0,0.6);animation:selUp .3s cubic-bezier(.34,1.2,.64,1)}
+#select-bar.on{display:flex}
+@keyframes selUp{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%)}}
 .react-row{display:flex;gap:.4rem;padding:.15rem .85rem .55rem 49px;flex-wrap:wrap}
 .react-chip{border-radius:100px;padding:.2rem .6rem;font-size:.85rem;display:flex;align-items:center;gap:.25rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:transform .15s,background .15s}
 .react-chip:active{transform:scale(0.9)}
@@ -1052,6 +1059,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <div style="display:flex;gap:.4rem;margin-bottom:.65rem">
         <button class="ptog-btn on" id="hv-date" onclick="setHistView('date')" style="flex:0 0 auto;padding:.35rem .9rem">📅 לפי ימים</button>
         <button class="ptog-btn" id="hv-cat" onclick="setHistView('cat')" style="flex:0 0 auto;padding:.35rem .9rem">🏷️ לפי קטגוריה</button>
+        <button class="ptog-btn" id="hv-select" onclick="toggleSelectMode()" style="flex:0 0 auto;padding:.35rem .9rem;margin-inline-start:auto">☑️ בחירה</button>
       </div>
       <div id="hist-results-count" style="font-size:.7rem;color:var(--txt2);margin-bottom:.5rem;display:none"></div>
       <div id="hist-body"></div>
@@ -1281,6 +1289,24 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <input type="number" id="invest-inp" placeholder="שווי התיק הנוכחי" min="0" step="1"
         style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
     <button onclick="saveInvest()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--pur);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">עדכן שווי תיק</button>
+  </div></div>
+
+  <!-- MULTI-SELECT BAR -->
+  <div id="select-bar">
+    <span id="sel-count" style="font-size:.78rem;font-weight:800;color:var(--blu);padding:0 .45rem;white-space:nowrap">נבחרו 0</span>
+    <button id="sel-edit" onclick="editSelected()" style="flex:1;padding:.55rem .3rem;border-radius:11px;background:var(--blu-d);border:1px solid var(--blu-b);color:var(--blu);font-family:inherit;font-size:.75rem;font-weight:800;cursor:pointer;opacity:.35">✏️ עריכה</button>
+    <button id="sel-del" onclick="openBulkDelete()" style="flex:1;padding:.55rem .3rem;border-radius:11px;background:var(--red-d);border:1px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.75rem;font-weight:800;cursor:pointer">🗑 מחק (0)</button>
+  </div>
+
+  <!-- BULK DELETE CONFIRM -->
+  <div class="ov" id="ov-bulkdel" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="sheet" style="text-align:center">
+    <div class="sh-handle"></div>
+    <div style="font-size:2rem;margin-bottom:.3rem">🗑</div>
+    <div class="sh-title" id="bulkdel-title">למחוק עסקאות?</div>
+    <div id="bulkdel-list" style="font-size:.75rem;color:var(--txt2);margin:.4rem 0 .9rem;line-height:1.7"></div>
+    <button id="bulkdel-btn" onclick="doBulkDelete()" style="width:100%;padding:.8rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.9rem;font-weight:800;border:none;cursor:pointer;margin-bottom:.45rem">מחק</button>
+    <button onclick="C('ov-bulkdel').classList.remove('on')" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);color:var(--txt2);font-family:inherit;font-size:.82rem;border:none;cursor:pointer">ביטול</button>
   </div></div>
 
   <!-- REACTION PICKER -->
@@ -2287,6 +2313,61 @@ function te(e,id){
   if(dx>55&&dy<35){w.classList.add('sw');w.querySelector('.tx').style.transform='translateX(-72px)';}
   else rw(w);
 }
+let selectMode=false;
+const selectedTxs=new Set();
+
+function toggleSelectMode(){
+  selectMode=!selectMode;
+  selectedTxs.clear();
+  const b=C('hv-select');
+  if(b){b.textContent=selectMode?'✕ ביטול':'☑️ בחירה';b.classList.toggle('on',selectMode);}
+  updateSelectBar();
+  renderHistory();
+}
+function toggleTxSelect(id){
+  if(_suppressNextClick){_suppressNextClick=false;return;}
+  id=String(id);
+  if(selectedTxs.has(id))selectedTxs.delete(id);else selectedTxs.add(id);
+  if(navigator.vibrate)navigator.vibrate(5);
+  updateSelectBar();
+  renderHistory();
+}
+function updateSelectBar(){
+  const bar=C('select-bar');if(!bar)return;
+  const n=selectedTxs.size;
+  bar.classList.toggle('on',selectMode&&n>0);
+  const cnt=C('sel-count');if(cnt)cnt.textContent='נבחרו '+n;
+  const eb=C('sel-edit');if(eb){eb.disabled=n!==1;eb.style.opacity=n===1?'1':'.35';}
+  const db=C('sel-del');if(db)db.textContent=`🗑 מחק (${n})`;
+}
+function editSelected(){
+  if(selectedTxs.size!==1)return;
+  const id=[...selectedTxs][0];
+  toggleSelectMode();
+  openEdit(id);
+}
+function openBulkDelete(){
+  if(!selectedTxs.size)return;
+  const items=txs.filter(t=>selectedTxs.has(String(t.id)));
+  C('bulkdel-title').textContent=items.length===1?'למחוק את העסקה?':`למחוק ${items.length} עסקאות?`;
+  const names=items.slice(0,3).map(t=>esc(t.description||t.category)+' (₪'+fmt(t.amount)+')').join(' · ');
+  C('bulkdel-list').innerHTML=names+(items.length>3?` · ועוד ${items.length-3}...`:'')+'<br><span style="font-size:.65rem;color:var(--txt3)">הפעולה לא ניתנת לשחזור</span>';
+  C('bulkdel-btn').textContent=items.length===1?'מחק עסקה':`מחק ${items.length} עסקאות`;
+  C('ov-bulkdel').classList.add('on');
+}
+async function doBulkDelete(){
+  const ids=[...selectedTxs];
+  C('ov-bulkdel').classList.remove('on');
+  toast('מוחק...');
+  const results=await Promise.all(ids.map(id=>sb.from('transactions').delete().eq('id',id)));
+  const failed=results.filter(r=>r&&r.error).length;
+  const okIds=new Set(ids.filter((id,i)=>!(results[i]&&results[i].error)));
+  txs=txs.filter(t=>!okIds.has(String(t.id)));
+  toggleSelectMode();
+  render();
+  toast(failed?`נמחקו ${ids.length-failed}, ${failed} נכשלו — בדקו חיבור`:`נמחקו ${ids.length} עסקאות ✓`);
+}
+
 function toggleTxActions(id){
   if(_suppressNextClick){_suppressNextClick=false;return;} // ghost click after long-press
   const w=C('txw-'+id);
@@ -2310,13 +2391,17 @@ async function delTx(id){
 // ════ TX ROW ════
 function mkTx(t,i){
   const c=getAllCats()[t.category]||getAllCats()['אחר'];
+  const isSel=selectMode&&selectedTxs.has(String(t.id));
+  const clickFn=selectMode?'toggleTxSelect':'toggleTxActions';
+  const ckHtml=selectMode?`<div class="tx-ck ${isSel?'on':''}">${isSel?'✓':''}</div>`:'';
   const d=new Date(t.date);
   const ds=d.toLocaleDateString('he-IL',{day:'numeric',month:'short'});
   const sign=t.type==='expense'?'-':'+';
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
   const whoTag=t.user_name?`<span class="tx-who">${esc(t.user_name)}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
-    <div class="tx" data-txid="${t.id}" onclick="toggleTxActions('${t.id}')">
+    <div class="tx ${isSel?'tx-selected':''}" data-txid="${t.id}" onclick="${clickFn}('${t.id}')">
+      ${ckHtml}
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
         <div class="tx-name">${esc(t.description||t.category)}${t.date?.substring(0,10)>new Date().toISOString().split('T')[0]?'<span style="font-size:.6rem;background:rgba(255,214,10,0.2);color:#ffd60a;border-radius:4px;padding:.1rem .3rem;margin-right:.3rem">עתידי</span>':''}</div>
