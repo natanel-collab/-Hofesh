@@ -1299,14 +1299,14 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- BULK DELETE CONFIRM -->
-  <div class="ov" id="ov-bulkdel" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="ov" id="ov-bulkdel" onclick="if(event.target===this){this.classList.remove('on');updateSelectBar();}">
   <div class="sheet" style="text-align:center">
     <div class="sh-handle"></div>
     <div style="font-size:2rem;margin-bottom:.3rem">🗑</div>
     <div class="sh-title" id="bulkdel-title">למחוק עסקאות?</div>
     <div id="bulkdel-list" style="font-size:.75rem;color:var(--txt2);margin:.4rem 0 .9rem;line-height:1.7"></div>
     <button id="bulkdel-btn" onclick="doBulkDelete()" style="width:100%;padding:.8rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.9rem;font-weight:800;border:none;cursor:pointer;margin-bottom:.45rem">מחק</button>
-    <button onclick="C('ov-bulkdel').classList.remove('on')" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);color:var(--txt2);font-family:inherit;font-size:.82rem;border:none;cursor:pointer">ביטול</button>
+    <button onclick="C('ov-bulkdel').classList.remove('on');updateSelectBar()" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);color:var(--txt2);font-family:inherit;font-size:.82rem;border:none;cursor:pointer">ביטול</button>
   </div></div>
 
   <!-- REACTION PICKER -->
@@ -2353,6 +2353,7 @@ function openBulkDelete(){
   const names=items.slice(0,3).map(t=>esc(t.description||t.category)+' (₪'+fmt(t.amount)+')').join(' · ');
   C('bulkdel-list').innerHTML=names+(items.length>3?` · ועוד ${items.length-3}...`:'')+'<br><span style="font-size:.65rem;color:var(--txt3)">הפעולה לא ניתנת לשחזור</span>';
   C('bulkdel-btn').textContent=items.length===1?'מחק עסקה':`מחק ${items.length} עסקאות`;
+  C('select-bar').classList.remove('on'); // hide floating bar behind the confirm sheet
   C('ov-bulkdel').classList.add('on');
 }
 async function doBulkDelete(){
