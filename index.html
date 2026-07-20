@@ -945,6 +945,14 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="motiv-content"></div>
       </div>
 
+      <div class="card glass" id="acc-card" style="display:none;padding:.85rem 1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem">
+          <span style="font-size:.85rem;font-weight:800">🏦 החשבונות שלנו</span>
+          <button onclick="openAccManager()" style="background:var(--blu-d);border:1px solid var(--blu-b);color:var(--blu);border-radius:100px;padding:.25rem .7rem;font-size:.65rem;font-weight:700;font-family:inherit;cursor:pointer">⚙️ ניהול</button>
+        </div>
+        <div id="acc-list"></div>
+      </div>
+
       <div class="card glass" id="inv-card" style="display:none">
         <div class="card-head" style="display:flex;justify-content:space-between;align-items:center">
           <span>📈 השקעות</span>
@@ -1166,6 +1174,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         </button>
       </div>
     </div>
+    <div id="acc-row" style="display:none;background:rgba(10,132,255,0.05);border:1px solid rgba(10,132,255,0.2);border-radius:14px;padding:.6rem;margin-bottom:.6rem">
+      <div style="font-size:.68rem;font-weight:700;color:var(--blu);text-align:center;margin-bottom:.45rem">🏦 מאיזה חשבון?</div>
+      <div id="acc-chips" style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center"></div>
+    </div>
     <div class="amt-wrap" onclick="C('a-amt').focus()">
       <div class="amt-cur" id="a-cur-sign">₪</div>
       <input class="amt-inp" id="a-amt" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"
@@ -1289,6 +1301,37 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <input type="number" id="invest-inp" placeholder="שווי התיק הנוכחי" min="0" step="1"
         style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
     <button onclick="saveInvest()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--pur);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">עדכן שווי תיק</button>
+  </div></div>
+
+  <!-- ACCOUNT CALIBRATION -->
+  <div class="ov" id="ov-acc-calib" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title" id="acc-calib-title">🏦 עדכון חשבון</div>
+    <div style="background:rgba(94,169,255,0.07);border:1px solid rgba(94,169,255,0.2);border-radius:12px;padding:.7rem .9rem;margin-bottom:.6rem">
+      <div style="font-size:.74rem;color:var(--txt2);line-height:1.6">כמה יש עכשיו בחשבון הזה? עסקאות חדשות שישויכו אליו ימשיכו מהמספר הזה.</div>
+      <div id="acc-calib-updated" style="font-size:.68rem;color:var(--txt3);margin-top:.4rem"></div>
+    </div>
+    <div class="field"><span class="fi">🏦</span>
+      <input type="number" id="acc-calib-inp" placeholder="יתרה נוכחית בחשבון" step="1"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;direction:rtl"></div>
+    <button onclick="saveAccCalib()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">עדכן יתרה ✓</button>
+  </div></div>
+
+  <!-- ACCOUNTS MANAGER -->
+  <div class="ov" id="ov-acc-mng" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">⚙️ החשבונות שלנו</div>
+    <div id="acc-mng-list" style="margin-bottom:.7rem"></div>
+    <div style="background:rgba(94,169,255,0.05);border:1px dashed rgba(94,169,255,0.35);border-radius:13px;padding:.7rem">
+      <div style="display:flex;gap:.35rem;margin-bottom:.5rem;justify-content:center" id="acc-emoji-row"></div>
+      <div style="display:flex;gap:.4rem">
+        <input type="text" id="acc-new-name" placeholder="שם החשבון (למשל: משותף)" maxlength="20"
+          style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;color:var(--txt);font-size:.82rem;font-family:inherit;outline:none;direction:rtl">
+        <button onclick="addAccount()" style="background:var(--blu);border:none;color:#fff;border-radius:10px;padding:.55rem .9rem;font-size:.8rem;font-weight:800;font-family:inherit;cursor:pointer">+ הוסף</button>
+      </div>
+    </div>
   </div></div>
 
   <!-- MULTI-SELECT BAR -->
@@ -1529,6 +1572,8 @@ let aType='expense', eType='expense', aAmt='0', aCur='ILS';
 let budEdit=false, period='month', hf='all', catEdit=false;
 let aSource='balance';
 let bankAnchor=null, bankAnchorAt=null;
+let bankAccounts=[];
+let aAccount=localStorage.getItem('hofesh-last-acc')||null;
 let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 let investBalance=localStorage.getItem('hofesh-invest')!==null&&localStorage.getItem('hofesh-invest')!==''?parseFloat(localStorage.getItem('hofesh-invest')):null;
 
@@ -1574,8 +1619,25 @@ const sumInvFromBal=arr=>{
   return arr.filter(t=>t.type==='invest'&&t.from_balance===true&&(t.date?.substring(0,10)<=today))
     .reduce((s,t)=>s+t.amount,0);
 };
-// Bank balance: anchor (user-calibrated) + net flow of transactions created AFTER calibration
+// Per-account balance: its anchor + flows of ITS transactions created after ITS calibration
+const calcAccountBalance=acc=>{
+  if(acc.anchor==null)return 0;
+  const today=new Date().toISOString().split('T')[0];
+  const flow=txs.filter(t=>
+    String(t.account_id)===String(acc.id)&&
+    (t.date?.substring(0,10)<=today)&&
+    t.created_at&&acc.anchor_at&&new Date(t.created_at)>new Date(acc.anchor_at)
+  ).reduce((s,t)=>
+    s+(t.type==='income'?t.amount
+      :t.type==='expense'?-t.amount
+      :(t.type==='invest'&&t.from_balance===true)?-t.amount
+      :0)
+  ,0);
+  return parseFloat(acc.anchor)+flow;
+};
+// Bank balance: multi-account sum, or legacy single-anchor fallback
 const calcBank=()=>{
+  if(bankAccounts.length)return bankAccounts.reduce((s,a)=>s+calcAccountBalance(a),0);
   if(bankAnchor===null)return ob+sumT(txs,'income')-sumT(txs,'expense')-sumInvFromBal(txs); // legacy (pre-calibration)
   const today=new Date().toISOString().split('T')[0];
   const flow=txs.filter(t=>
@@ -1807,6 +1869,121 @@ async function saveCash(){
   toast(cashErr?'⚠️ נשמר מקומית בלבד — בדקו חיבור':'מזומן עודכן ✓');
 }
 
+// ═══ BANK ACCOUNTS ═══
+let _calibAccId=null;
+let _newAccEmoji='🏦';
+const ACC_EMOJIS=['🏦','👫','👤','💳','💼'];
+
+function timeAgoHe(iso){
+  if(!iso)return 'לא עודכן עדיין';
+  const d=new Date(iso), now=new Date();
+  const days=Math.floor((now-d)/864e5);
+  if(d.toDateString()===now.toDateString())return 'עודכן היום '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  if(days<=1)return 'עודכן אתמול';
+  return `עודכן לפני ${days} ימים`;
+}
+
+function renderAccounts(){
+  const card=C('acc-card');if(!card)return;
+  if(!bankAccounts.length){card.style.display='none';return;}
+  card.style.display='block';
+  C('acc-list').innerHTML=bankAccounts.map(a=>`
+    <div onclick="openAccCalib('${a.id}')" style="display:flex;align-items:center;gap:.55rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:.55rem .75rem;margin-bottom:.35rem;cursor:pointer">
+      <span style="font-size:1rem">${a.emoji||'🏦'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:700">${esc(a.name)}</div>
+        <div style="font-size:.58rem;color:var(--txt3)">${timeAgoHe(a.anchor_at)}</div>
+      </div>
+      <span style="font-size:.82rem;font-weight:800;color:var(--blu)">${a.anchor!=null?'₪'+fmt(calcAccountBalance(a)):'—'}</span>
+      <span style="font-size:.68rem;color:var(--blu);opacity:.75">✎</span>
+    </div>`).join('');
+}
+
+function openAccCalib(id){
+  const a=bankAccounts.find(x=>String(x.id)===String(id));
+  if(!a)return;
+  _calibAccId=id;
+  C('acc-calib-title').textContent=`${a.emoji||'🏦'} עדכון: ${a.name}`;
+  C('acc-calib-updated').textContent=a.anchor_at?timeAgoHe(a.anchor_at):'עדכון ראשון — מכאן החשבון מתחיל לספור 👋';
+  C('acc-calib-inp').value=a.anchor!=null?a.anchor:'';
+  C('ov-acc-calib').classList.add('on');
+  setTimeout(()=>C('acc-calib-inp').focus(),320);
+}
+async function saveAccCalib(){
+  const a=bankAccounts.find(x=>String(x.id)===String(_calibAccId));
+  if(!a)return;
+  const v=parseFloat(C('acc-calib-inp').value);
+  if(isNaN(v)){toast('הכנס סכום');return;}
+  a.anchor=v;a.anchor_at=new Date().toISOString();
+  const {error}=await sb.from('bank_accounts').update({anchor:v,anchor_at:a.anchor_at}).eq('id',a.id);
+  if(error){toast('שגיאה: '+error.message);return;}
+  C('ov-acc-calib').classList.remove('on');
+  render();
+  toast(`✓ ${a.name} עודכן — ₪${fmt(v)}`);
+}
+
+function openAccManager(){
+  renderAccManager();
+  C('ov-acc-mng').classList.add('on');
+}
+function renderAccManager(){
+  C('acc-mng-list').innerHTML=bankAccounts.length?bankAccounts.map(a=>`
+    <div style="display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:11px;padding:.55rem .7rem;margin-bottom:.35rem">
+      <span style="font-size:.95rem">${a.emoji||'🏦'}</span>
+      <span style="flex:1;font-size:.8rem;font-weight:700">${esc(a.name)}</span>
+      <button onclick="renameAccount('${a.id}')" style="background:none;border:none;font-size:.75rem;cursor:pointer;font-family:inherit">✏️</button>
+      <button onclick="deleteAccount('${a.id}')" style="background:none;border:none;font-size:.75rem;cursor:pointer;font-family:inherit">🗑</button>
+    </div>`).join(''):'<div style="text-align:center;font-size:.75rem;color:var(--txt3);padding:.5rem">אין חשבונות עדיין — הוסיפו את הראשון 👇</div>';
+  C('acc-emoji-row').innerHTML=ACC_EMOJIS.map(e=>
+    `<span onclick="_newAccEmoji='${e}';renderAccManager()" style="font-size:1.1rem;padding:.25rem .45rem;border-radius:9px;cursor:pointer;${_newAccEmoji===e?'background:rgba(10,132,255,0.2);border:1px solid rgba(10,132,255,0.5)':'opacity:.55'}">${e}</span>`
+  ).join('');
+}
+async function addAccount(){
+  const name=C('acc-new-name').value.trim();
+  if(!name){toast('הכנס שם לחשבון');return;}
+  const {data,error}=await sb.from('bank_accounts').insert({
+    family_id:profile.family_id,name,emoji:_newAccEmoji
+  }).select().single();
+  if(error){toast('שגיאה: '+error.message);return;}
+  bankAccounts.push(data);
+  C('acc-new-name').value='';
+  renderAccManager();render();
+  toast(`✓ נוסף חשבון "${name}" — עכשיו עדכנו את היתרה שלו`);
+}
+async function renameAccount(id){
+  const a=bankAccounts.find(x=>String(x.id)===String(id));
+  if(!a)return;
+  const nn=prompt('שם חדש לחשבון:',a.name);
+  if(!nn||!nn.trim())return;
+  a.name=nn.trim();
+  const {error}=await sb.from('bank_accounts').update({name:a.name}).eq('id',a.id);
+  if(error){toast('שגיאה בשמירה');return;}
+  renderAccManager();render();
+}
+async function deleteAccount(id){
+  const a=bankAccounts.find(x=>String(x.id)===String(id));
+  if(!a)return;
+  if(!confirm(`למחוק את החשבון "${a.name}"? היתרה שלו תרד מהיתרה הכוללת.`))return;
+  const {error}=await sb.from('bank_accounts').delete().eq('id',a.id);
+  if(error){toast('שגיאה: '+error.message);return;}
+  bankAccounts=bankAccounts.filter(x=>String(x.id)!==String(id));
+  if(String(aAccount)===String(id))aAccount=null;
+  renderAccManager();render();
+  toast('החשבון נמחק');
+}
+
+function renderAccChips(){
+  const row=C('acc-row');if(!row)return;
+  const need=bankAccounts.length>1&&(aType!=='invest'||aSource==='balance');
+  row.style.display=need?'block':'none';
+  if(!need)return;
+  if(!aAccount||!bankAccounts.find(a=>String(a.id)===String(aAccount)))aAccount=String(bankAccounts[0].id);
+  C('acc-chips').innerHTML=bankAccounts.map(a=>{
+    const on=String(a.id)===String(aAccount);
+    return `<span onclick="aAccount='${a.id}';localStorage.setItem('hofesh-last-acc',aAccount);renderAccChips()" style="border-radius:100px;padding:.4rem .8rem;font-size:.72rem;font-weight:800;cursor:pointer;${on?'background:rgba(10,132,255,0.2);border:1px solid rgba(10,132,255,0.5);color:var(--txt)':'background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--txt2)'}">${a.emoji||'🏦'} ${esc(a.name)}</span>`;
+  }).join('');
+}
+
 function openInvestModal(){
   C('invest-inp').value=investBalance!=null?investBalance:'';
   C('ov-invest').classList.add('on');
@@ -1956,12 +2133,13 @@ async function loadUserData(){
   family=fam;
 
   // load all data in parallel
-  const [txRes,budRes,goalRes,settRes,reactRes]=await Promise.all([
+  const [txRes,budRes,goalRes,settRes,reactRes,accRes]=await Promise.all([
     sb.from('transactions').select('*').eq('family_id',profile.family_id).order('date',{ascending:false}),
     sb.from('budgets').select('*').eq('family_id',profile.family_id),
     sb.from('goals').select('*').eq('family_id',profile.family_id),
     sb.from('family_settings').select('*').eq('family_id',profile.family_id).single(),
-    sb.from('tx_reactions').select('*').eq('family_id',profile.family_id)
+    sb.from('tx_reactions').select('*').eq('family_id',profile.family_id),
+    sb.from('bank_accounts').select('*').eq('family_id',profile.family_id)
   ]);
 
   txs=(txRes.data||[]).map(t=>({...t,amount:parseFloat(t.amount)}));
@@ -1969,6 +2147,7 @@ async function loadUserData(){
   (reactRes?.data||[]).forEach(r=>{
     (txReactions[r.transaction_id]=txReactions[r.transaction_id]||[]).push(r);
   });
+  bankAccounts=(accRes?.data||[]).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
   buds={...DBUD};
   (budRes.data||[]).forEach(b=>{buds[b.category]=parseFloat(b.amount);});
   goals=(goalRes.data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
@@ -2160,6 +2339,13 @@ function subscribeRealtime(){
         txReactions={};
         (data||[]).forEach(r=>{(txReactions[r.transaction_id]=txReactions[r.transaction_id]||[]).push(r);});
         renderHistory();
+      })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'bank_accounts',filter:`family_id=eq.${profile.family_id}`},
+      async()=>{
+        const {data}=await sb.from('bank_accounts').select('*').eq('family_id',profile.family_id);
+        bankAccounts=(data||[]).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+        render();
       })
     .subscribe(status=>{
       console.log('Realtime status:',status);
@@ -2423,6 +2609,7 @@ function mkTx(t,i){
 
 // ════ CALIBRATE BALANCE ════
 function openOb(){
+  if(bankAccounts.length){openAccManager();return;} // multi-account mode
   C('ob-real').value=bankAnchor!==null?bankAnchor:'';
   C('ob-calc-preview').style.display='none';
   const l=C('bank-updated-lbl');
@@ -2945,7 +3132,7 @@ function renderBalance(){
   const totalSav=getTotalSavings();
   const bank=calcBank();
   const total=bank+totalSav+cashBalance;
-  C('ob-lbl').textContent=bankAnchor!==null?`🏦 בנק: ₪${fmt(bank)}`:`פתיחה: ₪${fmt(ob)}`;
+  C('ob-lbl').textContent=bankAccounts.length?`🏦 ${bankAccounts.length} חשבונות + מזומן`:(bankAnchor!==null?`🏦 בנק: ₪${fmt(bank)}`:`פתיחה: ₪${fmt(ob)}`);
   C('bal-big').textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));
   C('bal-big').classList.toggle('neg',total<0);
   const nb=C('nav-bal');nb.textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));nb.className=total<0?'neg':'pos';
@@ -3055,7 +3242,40 @@ function renderBudget(){
     else if(pct>=90){warnText=`<div style="font-size:.7rem;color:var(--red);margin-top:.3rem">⚠️ ${pct}% — נשארו ₪${fmt(remaining)}</div>`;}
     else if(pct>=70){warnText=`<div style="font-size:.7rem;color:var(--ylw);margin-top:.3rem">⚠️ ${pct}% — נשארו ₪${fmt(remaining)}</div>`;}
     return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:${pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--txt2)'}">₪${fmt(spent)} / ₪${fmt(bud)}</div></div><div class="ptrack"><div class="pfill${cls}" style="width:${Math.min(pct,100)}%;background:${c.c}"></div></div>${warnText}</div>`;
-  }).join('');
+  }).join('')+buildBudgetTotal(cats,tots);
+}
+
+function buildBudgetTotal(cats,tots){
+  const budCats=cats.filter(c=>(buds[c]||DBUD[c]||0)>0);
+  if(!budCats.length)return '';
+  const totalBud=budCats.reduce((s,c)=>s+(buds[c]||DBUD[c]||0),0);
+  const totalSpent=budCats.reduce((s,c)=>s+(tots[c]||0),0);
+  const pct=totalBud>0?Math.round(totalSpent/totalBud*100):0;
+  const col=pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--grn)';
+  const grad=pct>=90?'linear-gradient(90deg,#a02020,#ff453a)':pct>=70?'linear-gradient(90deg,#b38f00,#ffd60a)':'linear-gradient(90deg,#1a7a3a,#30d158)';
+  const remaining=totalBud-totalSpent;
+  const now=new Date();
+  let paceLine='';
+  if(cY===now.getFullYear()&&cM===now.getMonth()&&remaining>0){
+    const daysInMonth=new Date(cY,cM+1,0).getDate();
+    const daysLeft=daysInMonth-now.getDate()+1;
+    const perDay=Math.floor(remaining/daysLeft);
+    paceLine=`<div style="margin-top:.5rem;background:var(--grn-d);border:1px solid var(--grn-b);border-radius:10px;padding:.45rem .7rem;font-size:.66rem;color:var(--grn);text-align:center">📅 נשארו ${daysLeft} ימים לחודש · קצב מומלץ: עד ₪${fmt(perDay)} ליום</div>`;
+  }
+  return `<div style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
+      <span style="font-size:.78rem;font-weight:700;color:var(--txt2)">💰 סה"כ החודש</span>
+      <span style="font-size:.85rem;font-weight:900"><span style="color:${col}">₪${fmt(totalSpent)}</span> <span style="font-size:.62rem;color:var(--txt3)">מתוך</span> ₪${fmt(totalBud)}</span>
+    </div>
+    <div style="height:9px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden">
+      <div style="height:100%;border-radius:6px;width:${Math.min(pct,100)}%;background:${grad};transition:width .6s cubic-bezier(.34,1.2,.64,1)"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--txt2);margin-top:.35rem">
+      <span>${pct}% מהתקציב נוצל</span>
+      <span style="color:${remaining>=0?'var(--grn)':'var(--red)'};font-weight:700">${remaining>=0?'נשארו ₪'+fmt(remaining):'חריגה של ₪'+fmt(Math.abs(remaining))}</span>
+    </div>
+    ${paceLine}
+  </div>`;
 }
 
 function renderHomeGoals(){
