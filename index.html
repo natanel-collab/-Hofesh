@@ -960,7 +960,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
       <div class="card glass">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
-          <div class="card-head" style="margin-bottom:0">תקציב לפי קטגוריה</div>
+          <div class="card-head" style="margin-bottom:0">תקציב לפי קטגוריה<span id="bud-mlabel" style="display:block;font-size:.62rem;font-weight:500;color:var(--txt2);margin-top:.15rem"></span></div>
           <button id="bud-edit-btn" onclick="toggleBudEdit()"
             style="background:var(--surface2);border:1px solid var(--border2);color:var(--txt2);
             font-family:inherit;font-size:.65rem;font-weight:500;padding:.25rem .65rem;
@@ -1601,6 +1601,7 @@ const DEFAULT_CATS={
 let user=null, profile=null, family=null, familySettings=null;
 let histView='date';
 let txReactions={};
+let budRows=[];
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -2211,8 +2212,8 @@ async function loadUserData(){
     (txReactions[r.transaction_id]=txReactions[r.transaction_id]||[]).push(r);
   });
   bankAccounts=(accRes?.data||[]).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
-  buds={...DBUD};
-  (budRes.data||[]).forEach(b=>{buds[b.category]=parseFloat(b.amount);});
+  budRows=(budRes.data||[]);
+  rebuildBuds();
   goals=(goalRes.data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
   familySettings=settRes.data;
   ob=parseFloat(familySettings?.opening_balance||0);
@@ -2709,6 +2710,32 @@ async function saveOb(){
 
 
 // ════ BUDGET ════
+// ── תקציב לפי חודשים ──
+function mKey(m=cM,y=cY){return y+'-'+String(m+1).padStart(2,'0');}
+function rebuildBuds(){
+  const k=mKey();
+  buds={...DBUD};
+  const best={};
+  budRows.forEach(r=>{
+    const rm=r.month||'2000-01';
+    if(rm>k)return;
+    if(!best[r.category]||rm>best[r.category].m)best[r.category]={m:rm,a:parseFloat(r.amount||0)};
+  });
+  Object.keys(best).forEach(c=>{buds[c]=best[c].a;});
+}
+function budSrcLabel(){
+  const k=mKey();
+  let src=null;
+  budRows.forEach(r=>{
+    const rm=r.month||'2000-01';
+    if(rm<=k&&(!src||rm>src))src=rm;
+  });
+  if(src===k)return MHE[cM]+' '+cY+' · ✒️ נקבע ידנית';
+  if(!src||src==='2000-01')return MHE[cM]+' '+cY+' · תקציב בסיס';
+  const p=src.split('-');
+  return MHE[cM]+' '+cY+' · ↩️ ירש מ'+MHE[parseInt(p[1])-1];
+}
+
 function toggleBudEdit(){
   budEdit=!budEdit;
   C('bud-edit-btn').textContent=budEdit?'סיום':'עריכה';
@@ -2716,8 +2743,14 @@ function toggleBudEdit(){
 }
 async function setBud(cat,v){
   const amt=Math.max(0,parseFloat(v)||0);
+  const k=mKey();
   buds[cat]=amt;
-  await sb.from('budgets').upsert({family_id:profile.family_id,category:cat,amount:amt},{onConflict:'family_id,category'});
+  const ex=budRows.find(r=>r.category===cat&&(r.month||'2000-01')===k);
+  if(ex)ex.amount=amt;
+  else budRows.push({family_id:profile.family_id,category:cat,amount:amt,month:k});
+  const {error}=await sb.from('budgets').upsert({family_id:profile.family_id,category:cat,amount:amt,month:k},{onConflict:'family_id,category,month'});
+  if(error){toast('שגיאה בשמירת התקציב');}
+  rebuildBuds();
   renderBudget();
 }
 
@@ -2736,6 +2769,7 @@ function setHF(f){
 }
 function chgMonth(d){
   cM+=d;if(cM>11){cM=0;cY++;}if(cM<0){cM=11;cY--;}
+  rebuildBuds();
   render();
 }
 
@@ -3286,6 +3320,7 @@ function renderInvPortfolio(){
 }
 
 function renderBudget(){
+  const ml=C('bud-mlabel');if(ml)ml.textContent=budSrcLabel();
   const mt=mTxs(),tots={};
   mt.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+t.amount;});
   // Include default + custom cats (exclude income-only)
