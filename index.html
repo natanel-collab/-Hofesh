@@ -552,6 +552,114 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .tip-text{font-size:.82rem;color:var(--txt2);line-height:1.6}
 
 @keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.tab-btn{position:relative}
+#tb-date-dot{position:absolute;top:.1rem;right:26%;width:7px;height:7px;border-radius:99px;
+  background:var(--acc2);display:none;animation:dtpulse 1.8s infinite}
+@keyframes dtpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.65}}
+.dt-srow{display:flex;gap:.45rem;margin-bottom:.8rem}
+.dt-sbox{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:.6rem .3rem;text-align:center}
+.dt-sv{font-size:1.05rem;font-weight:900;color:var(--txt)}
+.dt-sl{font-size:.58rem;color:var(--txt2);margin-top:.1rem}
+.dt-qa{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:.6rem .7rem;margin-bottom:.45rem}
+.dt-qq{font-size:.68rem;color:var(--txt2);margin-bottom:.35rem;line-height:1.45}
+.dt-ans{font-size:.72rem;padding:.15rem 0;color:var(--txt);word-break:break-word}
+.dt-ans b{color:var(--acc)}
+.dt-empty{font-size:.72rem;color:var(--txt3);text-align:center;padding:.8rem 0}
+
+/* ══ 💜 DATE (המפגש הכספי) ══ */
+.dt-card{position:relative;border-radius:20px;padding:.9rem 1rem;overflow:hidden;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));
+  border:1px solid var(--acc-b);margin-bottom:.8rem;transition:transform .15s}
+.dt-card:active{transform:scale(.98)}
+.dt-card::before{content:'';position:absolute;inset:-45%;
+  background:conic-gradient(from 0deg,transparent 0 70%,var(--acc) 86%,transparent 100%);
+  animation:dtspin 6s linear infinite;opacity:.22}
+@keyframes dtspin{to{transform:rotate(360deg)}}
+.dt-card.done{background:var(--surface);border-color:var(--border)}
+.dt-card.done::before{display:none}
+.dt-in{position:relative;z-index:1}
+.dt-top{display:flex;align-items:center;gap:.6rem}
+.dt-emoji{font-size:1.6rem;animation:dtbeat 1.8s ease infinite}
+.dt-card.done .dt-emoji{animation:none}
+@keyframes dtbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.18)}24%{transform:scale(1)}}
+.dt-title{font-size:.92rem;font-weight:800;color:var(--txt)}
+.dt-sub{font-size:.68rem;color:var(--txt2);margin-top:.1rem}
+.dt-go{margin-right:auto;font-size:.72rem;font-weight:800;color:var(--acc)}
+
+.ov-date{align-items:stretch!important;background:rgba(0,0,0,.75)!important}
+.dt-screen{width:100%;display:flex;flex-direction:column;position:relative;
+  background:var(--bg-grad);background-color:var(--bg);overflow:hidden}
+.dt-prog{display:flex;gap:4px;padding:.9rem .8rem .3rem;z-index:5}
+.dt-pb{flex:1;height:3px;background:rgba(255,255,255,0.22);border-radius:99px;overflow:hidden}
+.dt-pb i{display:block;height:100%;width:0;background:#fff;border-radius:99px}
+.dt-pb.dn i{width:100%}
+.dt-pb.ac i{animation:dtfill 7s linear forwards}
+@keyframes dtfill{from{width:0}to{width:100%}}
+.dt-x{position:absolute;top:.75rem;left:.8rem;z-index:9;width:30px;height:30px;border-radius:99px;
+  background:rgba(255,255,255,0.14);border:none;color:#fff;font-size:.9rem;cursor:pointer;font-family:inherit}
+.dt-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:1rem 1.6rem;gap:.6rem;overflow-y:auto}
+.dt-kick{font-size:.72rem;font-weight:800;color:var(--acc);letter-spacing:.04em}
+.dt-big{font-size:1.5rem;font-weight:900;line-height:1.3;color:var(--txt)}
+.dt-huge{font-size:2.9rem;font-weight:900;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.dt-stx{font-size:.8rem;color:var(--txt2);line-height:1.6}
+.dt-tag{display:inline-block;border-radius:99px;padding:.25rem .7rem;font-size:.72rem;font-weight:700}
+.dt-hint{position:absolute;bottom:1rem;left:0;right:0;text-align:center;font-size:.6rem;color:var(--txt3)}
+.dt-bars{width:100%;display:flex;flex-direction:column;gap:.7rem;margin-top:.3rem}
+.dt-bl{display:flex;justify-content:space-between;font-size:.72rem;font-weight:600;margin-bottom:.25rem}
+.dt-bl b{color:var(--txt)}.dt-bl span{color:var(--txt2)}
+.dt-bt{height:8px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden}
+.dt-bf{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));
+  transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.dt-ring{position:relative;width:130px;height:130px}
+.dt-ring svg{transform:rotate(-90deg)}
+.dt-rt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dt-rt b{font-size:1.5rem;font-weight:900;color:var(--txt)}
+.dt-rt span{font-size:.6rem;color:var(--txt2)}
+
+.dt-pad{flex:1;display:flex;flex-direction:column;padding:3rem 1rem 1rem;overflow-y:auto}
+.dt-qh{text-align:center;margin-bottom:.9rem}
+.dt-qt{font-size:1.05rem;font-weight:800;line-height:1.45;margin-top:.35rem;color:var(--txt)}
+.dt-chat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:.8rem;margin-bottom:.7rem}
+.dt-bub{border-radius:15px;padding:.6rem .75rem;font-size:.8rem;line-height:1.55;max-width:88%;
+  margin-bottom:.5rem;animation:dtpop .35s cubic-bezier(.2,1.4,.4,1);word-break:break-word}
+@keyframes dtpop{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
+.dt-bub.me{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin-right:auto}
+.dt-bub.you{background:var(--surface2);border:1px solid var(--border);color:var(--txt);margin-left:auto}
+.dt-who{display:block;font-size:.58rem;opacity:.8;font-weight:700;margin-bottom:.15rem}
+.dt-wait{display:flex;align-items:center;gap:.4rem;color:var(--txt2);font-size:.7rem;padding:.3rem .2rem}
+.dt-dots{display:inline-flex;gap:3px}
+.dt-dots i{width:4px;height:4px;border-radius:99px;background:var(--txt2);animation:dtblink 1.2s infinite}
+.dt-dots i:nth-child(2){animation-delay:.2s}.dt-dots i:nth-child(3){animation-delay:.4s}
+@keyframes dtblink{0%,100%{opacity:.25}50%{opacity:1}}
+.dt-row{display:flex;gap:.5rem;margin-top:auto}
+.dt-inp{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:14px;
+  padding:.7rem .8rem;color:var(--txt);font-size:.82rem;font-family:inherit;outline:none}
+.dt-inp:focus{border-color:var(--acc-b)}
+.dt-send{border:none;border-radius:14px;padding:0 1rem;font-size:.8rem;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;font-family:inherit}
+.dt-send:active{transform:scale(.95)}
+.dt-next{margin-top:.7rem;border:none;border-radius:99px;padding:.8rem;font-size:.88rem;font-weight:800;
+  color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;
+  font-family:inherit;width:100%;animation:dtpop .4s cubic-bezier(.2,1.4,.4,1)}
+.dt-ghost{margin-top:.5rem;border:1px solid var(--border2);background:transparent;color:var(--txt2);
+  border-radius:99px;padding:.65rem;font-size:.75rem;font-weight:600;width:100%;cursor:pointer;font-family:inherit}
+.dt-dec{display:flex;align-items:center;gap:.55rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:.65rem .75rem;font-size:.78rem;color:var(--txt);margin-bottom:.45rem;
+  animation:dtpop .35s cubic-bezier(.2,1.4,.4,1)}
+.dt-chk{width:20px;height:20px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.62rem;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.dt-dec.old .dt-chk{background:var(--surface2);color:var(--txt2)}
+.dt-dec.old{opacity:.7}
+.dt-dd{margin-right:auto;font-size:.58rem;color:var(--txt3);flex-shrink:0}
+.dt-conf{position:absolute;top:-12px;width:8px;height:13px;border-radius:2px;z-index:8;
+  animation:dtfall linear forwards}
+@keyframes dtfall{to{transform:translateY(110vh) rotate(720deg);opacity:.6}}
 </style>
 <script>
 // Minimal Supabase Client v3 - explicit Promise pattern (no thenable)
@@ -957,7 +1065,6 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 
 
-
       <div class="card glass">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
           <div class="card-head" style="margin-bottom:0">תקציב לפי קטגוריה<span id="bud-mlabel" style="display:block;font-size:.62rem;font-weight:500;color:var(--txt2);margin-top:.15rem"></span></div>
@@ -1106,6 +1213,23 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     </div></div>
 
     <!-- GOALS -->
+    <div class="view" id="v-date"><div class="page">
+
+      <div id="date-card-slot"></div>
+      <div id="dt-stats"></div>
+
+      <div class="card glass">
+        <div class="card-head">✅ ההחלטות שלנו</div>
+        <div id="dt-dec-all"></div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-head">💬 מה ענינו בעבר</div>
+        <div id="dt-arch"></div>
+      </div>
+
+    </div></div>
+
     <div class="view" id="v-goals"><div class="page">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
         <div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3)">יעדי חיסכון</div>
@@ -1170,6 +1294,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button class="tab-btn on" id="tb-home" onclick="goTab('home')"><span class="ti">🏠</span><span class="tl">ראשי</span></button>
     <button class="tab-btn" id="tb-stats" onclick="goTab('stats')"><span class="ti">📊</span><span class="tl">סטטיסטיקה</span></button>
     <button class="tab-btn" id="tb-history" onclick="goTab('history')"><span class="ti">📋</span><span class="tl">עסקאות</span></button>
+    <button class="tab-btn" id="tb-date" onclick="goTab('date')"><span class="ti">💜</span><span class="tl">מפגש</span><span id="tb-date-dot"></span></button>
     <button class="tab-btn" id="tb-invest" onclick="goTab('invest')"><span class="ti">📈</span><span class="tl">השקעות</span></button>
     <button class="tab-btn" id="tb-goals" onclick="goTab('goals')"><span class="ti">🎯</span><span class="tl">יעדים</span></button>
   </div>
@@ -1177,6 +1302,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   <div id="toast"></div>
 
   <!-- ADD TX -->
+  <div class="ov ov-date" id="ov-date">
+    <div class="dt-screen" id="dt-screen"></div>
+  </div>
+
   <div class="ov" id="ov-add" onclick="if(event.target===this)closeAdd()">
   <div class="sheet">
     <div class="sh-handle"></div><div class="sh-title">הוספת עסקה</div>
@@ -1473,6 +1602,13 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
           <button id="skin-grn" onclick="setSkin('grn',event)" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">💚 ירוק</button>
         </div>
       </div>
+      <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.85rem;color:var(--txt)">💜 תדירות המפגש הכספי</div>
+        <div style="display:flex;gap:.35rem">
+          <button id="dtf-weekly" onclick="setDateFreq('weekly')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">שבועי</button>
+          <button id="dtf-monthly" onclick="setDateFreq('monthly')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">חודשי</button>
+        </div>
+      </div>
       <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="C('ov-profile').classList.remove('on');openCatModal()">
         <div style="font-size:.85rem;color:var(--txt)">🏷️ קטגוריות מותאמות</div>
         <div style="font-size:.75rem;color:var(--blu)">›</div>
@@ -1602,6 +1738,7 @@ let user=null, profile=null, family=null, familySettings=null;
 let histView='date';
 let txReactions={};
 let budRows=[];
+let dateAnswers=[], dateAnswersAll=[], dateDecisions=[], dateLog=[], dtStage=0, dtStoryTimer=null, dtPollTimer=null, dateFreq='weekly';
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -2245,6 +2382,7 @@ async function loadUserData(){
 
   // subscribe to realtime
   subscribeRealtime();
+  loadDateData();
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
@@ -2708,6 +2846,356 @@ async function saveOb(){
   C('ov-ob').classList.remove('on');render();toast('יתרת פתיחה עודכנה ✓');
 }
 
+
+
+// ════════ 💜 המפגש הכספי ════════
+const DT_QS=[
+ 'אם היו לנו ₪1,000 פנויים החודש — על מה היית שם אותם?',
+ 'מה ההוצאה שהכי שמחת עליה בתקופה האחרונה?',
+ 'מה ההוצאה שהכי התחרטת עליה?',
+ 'איזה דבר קטן היית רוצה שנפנק בו את עצמנו?',
+ 'מה מלחיץ אותך הכי הרבה בכסף שלנו כרגע?',
+ 'איזה יעד היית רוצה שנתחיל לחסוך אליו?',
+ 'אם היינו חייבים לקצץ ₪500 החודש — מאיפה?',
+ 'מה הדבר הכי טוב שקנינו יחד השנה?',
+ 'איך היית רוצה שנראה כלכלית בעוד שנה?',
+ 'מה החלום היקר שאתה הכי רוצה שנגשים?',
+ 'על מה אתה מרגיש שאנחנו מוציאים יותר מדי?',
+ 'על מה דווקא שווה לנו להוציא יותר?',
+ 'מה היית עושה עם בונוס פתאומי של ₪5,000?',
+ 'איזו הרגלה כספית היית רוצה שנשנה יחד?',
+ 'מה גורם לך להרגיש בטוח כלכלית?',
+ 'איזה חוויה משותפת שווה בעינייך כל שקל?',
+ 'אם היינו יכולים לקפוא לחודש בלי הוצאות — לאן היינו הולכים?',
+ 'מה למדת על עצמך בקשר לכסף לאחרונה?',
+ 'איזה דבר אחד היית רוצה שנעשה אחרת בחודש הבא?',
+ 'על מה אתה הכי גאה בנו כלכלית?'
+];
+function dtFmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dtAnchor(d){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  if(dateFreq==='monthly')return new Date(x.getFullYear(),x.getMonth(),1);
+  x.setDate(x.getDate()-x.getDay());return x;
+}
+function dtKeyOf(d){
+  const a=dtAnchor(d);
+  if(dateFreq==='monthly')return a.getFullYear()+'-'+String(a.getMonth()+1).padStart(2,'0');
+  const jan1=new Date(a.getFullYear(),0,1);
+  const wk=Math.floor((a-jan1)/604800000)+1;
+  return a.getFullYear()+'-W'+String(wk).padStart(2,'0');
+}
+function dtShift(n){const d=new Date();if(dateFreq==='monthly')d.setMonth(d.getMonth()-n);else d.setDate(d.getDate()-7*n);return d;}
+function dtKey(n){return dtKeyOf(dtShift(n||0));}
+function dtRange(n){
+  const a=dtAnchor(dtShift(n||0));let e;
+  if(dateFreq==='monthly')e=new Date(a.getFullYear(),a.getMonth()+1,0);
+  else{e=new Date(a);e.setDate(e.getDate()+6);}
+  return{s:dtFmtD(a),e:dtFmtD(e)};
+}
+function dtTxs(n){const r=dtRange(n||0);return txs.filter(t=>{const d=(t.date||'').substring(0,10);return d>=r.s&&d<=r.e;});}
+function dtSum(list){return list.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount||0),0);}
+function dtDone(){const k=dtKey(0);return dateLog.some(l=>l.period===k);}
+function dtStreak(){let n=dtDone()?0:1,c=0;while(c<80){if(dateLog.some(l=>l.period===dtKey(n))){c++;n++;}else break;}return c;}
+function dtSeed(k){let s=0;for(let i=0;i<k.length;i++)s+=k.charCodeAt(i)*(i+1);return s;}
+function dtQuestionFor(k){return DT_QS[dtSeed(String(k||''))%DT_QS.length];}
+function dtQuestion(){return dtQuestionFor(dtKey(0));}
+function dtWord(){return dateFreq==='monthly'?'החודשי':'השבועי';}
+function dtNextWord(){return dateFreq==='monthly'?'בחודש הבא':'בשבוע הבא';}
+
+async function loadDateData(){
+  if(!profile||!profile.family_id)return;
+  dateFreq=(familySettings&&familySettings.date_freq)||'weekly';
+  syncDateFreqBtns();
+  const k=dtKey(0);
+  try{
+    const [a,d,l]=await Promise.all([
+      sb.from('date_answers').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}).limit(60),
+      sb.from('date_decisions').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
+      sb.from('date_log').select('*').eq('family_id',profile.family_id)
+    ]);
+    dateAnswersAll=a.data||[];
+    dateAnswers=dateAnswersAll.filter(x=>x.period===k);
+    dateDecisions=d.data||[];dateLog=l.data||[];
+  }catch(e){}
+  renderDateTab();
+}
+
+function renderDateCard(){
+  const dot=C('tb-date-dot');
+  if(dot)dot.style.display=dtDone()?'none':'block';
+  const el=C('date-card-slot');if(!el)return;
+  const st=dtStreak();
+  if(dtDone()){
+    el.innerHTML='<div class="dt-card done" onclick="openDate()"><div class="dt-in"><div class="dt-top">'+
+      '<div class="dt-emoji">✅</div><div><div class="dt-title">המפגש '+dtWord()+' הושלם</div>'+
+      '<div class="dt-sub">'+(st>0?'🔥 '+st+' ברצף · ':'')+'נתראה '+dtNextWord()+'</div></div>'+
+      '<div class="dt-go">צפה ←</div></div></div></div>';
+    return;
+  }
+  const mine=dateAnswers.some(a=>a.user_id===user.id);
+  const sub=mine?'ענית ✓ · ממתין לסיום יחד':(st>0?'🔥 '+st+' ברצף · 3 דקות':'סיכום התקופה מחכה לשניכם · 3 דקות');
+  el.innerHTML='<div class="dt-card" onclick="openDate()"><div class="dt-in"><div class="dt-top">'+
+    '<div class="dt-emoji">💜</div><div><div class="dt-title">המפגש '+dtWord()+' שלכם מוכן</div>'+
+    '<div class="dt-sub">'+sub+'</div></div><div class="dt-go">התחילו ←</div></div></div></div>';
+}
+
+function renderDateTab(){
+  renderDateCard();
+  const st=C('dt-stats');
+  if(st){
+    const ps={};dateLog.forEach(l=>{ps[l.period]=1;});
+    st.innerHTML='<div class="dt-srow">'+
+      '<div class="dt-sbox"><div class="dt-sv">\uD83D\uDD25 '+dtStreak()+'</div><div class="dt-sl">ברצף</div></div>'+
+      '<div class="dt-sbox"><div class="dt-sv">'+Object.keys(ps).length+'</div><div class="dt-sl">סה״כ מפגשים</div></div>'+
+      '<div class="dt-sbox"><div class="dt-sv">'+dateDecisions.length+'</div><div class="dt-sl">החלטות</div></div></div>';
+  }
+  const dl=C('dt-dec-all');
+  if(dl){
+    const k=dtKey(0);let h='';
+    dateDecisions.slice(0,15).forEach(d=>{
+      h+='<div class="dt-dec'+(d.period===k?'':' old')+'"><div class="dt-chk">✓</div>'+esc(d.txt)+
+         '<span class="dt-dd">'+esc(String(d.period||''))+'</span></div>';
+    });
+    dl.innerHTML=h||'<div class="dt-empty">עוד לא קבעתם החלטות משותפות</div>';
+  }
+  const ar=C('dt-arch');
+  if(ar){
+    const by={};
+    dateAnswersAll.forEach(a=>{(by[a.period]=by[a.period]||[]).push(a);});
+    const keys=Object.keys(by).sort().reverse().slice(0,6);
+    let h='';
+    keys.forEach(p=>{
+      h+='<div class="dt-qa"><div class="dt-qq">'+esc(dtQuestionFor(p))+'</div>';
+      by[p].forEach(a=>{h+='<div class="dt-ans"><b>'+esc(a.user_name||'—')+':</b> '+esc(a.answer)+'</div>';});
+      h+='</div>';
+    });
+    ar.innerHTML=h||'<div class="dt-empty">עוד אין תשובות שמורות</div>';
+  }
+}
+function openDate(){dtStage=0;C('ov-date').classList.add('on');dtRender();dtStartPoll();}
+function closeDate(){
+  C('ov-date').classList.remove('on');
+  clearTimeout(dtStoryTimer);clearInterval(dtPollTimer);dtPollTimer=null;
+  renderDateTab();
+}
+function dtStartPoll(){
+  clearInterval(dtPollTimer);
+  dtPollTimer=setInterval(async()=>{
+    if(!profile||!profile.family_id)return;
+    try{
+      const {data}=await sb.from('date_answers').select('*').eq('family_id',profile.family_id).eq('period',dtKey(0));
+      const fresh=data||[];
+      if(JSON.stringify(fresh.map(x=>x.id).sort())!==JSON.stringify(dateAnswers.map(x=>x.id).sort())){
+        dateAnswers=fresh;
+        if(dtStage===5)dtRender();
+      }
+    }catch(e){}
+  },6000);
+}
+
+function dtRender(){
+  const sc=C('dt-screen');if(!sc)return;
+  clearTimeout(dtStoryTimer);
+  if(dtStage<5){dtStory(sc);return;}
+  if(dtStage===5){dtQuestionView(sc);return;}
+  if(dtStage===6){dtDecisionView(sc);return;}
+  dtDoneView(sc);
+}
+function dtNext(){dtStage++;dtRender();}
+
+function dtStory(sc){
+  let pb='';
+  for(let i=0;i<5;i++)pb+='<div class="dt-pb '+(i<dtStage?'dn':i===dtStage?'ac':'')+'"><i></i></div>';
+  let body='';
+  const cur=dtTxs(0),prev=dtTxs(1);
+  const curSum=dtSum(cur),prevSum=dtSum(prev);
+  if(dtStage===0){
+    const r=dtRange(0);
+    body='<div style="font-size:2.6rem">💜</div>'+
+      '<div class="dt-kick">'+esc(r.s.substring(8)+'.'+r.s.substring(5,7))+' – '+esc(r.e.substring(8)+'.'+r.e.substring(5,7))+'</div>'+
+      '<div class="dt-big">המפגש הכספי<br>שלכם</div>'+
+      '<div class="dt-stx">סיכום קצר, שאלה אחת,<br>והחלטה משותפת</div>';
+  }else if(dtStage===1){
+    let tag='';
+    if(prevSum>0){
+      const diff=Math.round((curSum-prevSum)/prevSum*100);
+      if(diff<0)tag='<div class="dt-tag" style="background:rgba(48,209,88,0.14);color:var(--grn);border:1px solid rgba(48,209,88,0.25)">↓ '+Math.abs(diff)+'% פחות מהתקופה הקודמת</div>';
+      else if(diff>0)tag='<div class="dt-tag" style="background:rgba(255,69,58,0.14);color:var(--red);border:1px solid rgba(255,69,58,0.25)">↑ '+diff+'% יותר מהתקופה הקודמת</div>';
+    }
+    body='<div class="dt-kick">התקופה במספרים</div><div class="dt-stx">הוצאתם</div>'+
+      '<div class="dt-huge" id="dt-cnt">₪0</div>'+tag;
+    setTimeout(()=>dtCount('dt-cnt',curSum,1200),80);
+  }else if(dtStage===2){
+    const tots={};
+    cur.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+parseFloat(t.amount||0);});
+    const top=Object.keys(tots).sort((a,b)=>tots[b]-tots[a]).slice(0,3);
+    if(!top.length){body='<div class="dt-kick">לאן הלך הכסף</div><div class="dt-big" style="font-size:1.2rem">אין הוצאות בתקופה הזו 🎉</div>';}
+    else{
+      const max=tots[top[0]];let bars='';
+      const all=getAllCats();
+      top.forEach(c=>{
+        const ic=(all[c]&&all[c].i)||'📌';
+        bars+='<div><div class="dt-bl"><b>'+ic+' '+esc(c)+'</b><span>₪'+fmt(Math.round(tots[c]))+'</span></div>'+
+          '<div class="dt-bt"><div class="dt-bf" data-w="'+Math.round(tots[c]/max*100)+'"></div></div></div>';
+      });
+      body='<div class="dt-kick">לאן הלך הכסף</div><div class="dt-big" style="font-size:1.15rem">הקטגוריות הגדולות</div><div class="dt-bars">'+bars+'</div>';
+      setTimeout(()=>{document.querySelectorAll('#dt-screen .dt-bf').forEach(f=>{f.style.width=f.getAttribute('data-w')+'%';});},120);
+    }
+  }else if(dtStage===3){
+    const g=goals&&goals.length?goals[0]:null;
+    if(!g){body='<div class="dt-kick">היעדים שלכם</div><div style="font-size:2.4rem">🎯</div>'+
+      '<div class="dt-big" style="font-size:1.15rem">עוד לא הגדרתם יעד</div>'+
+      '<div class="dt-stx">יעד משותף הופך חיסכון<br>למשהו שכיף לעקוב אחריו</div>';}
+    else{
+      const pct=g.target>0?Math.min(100,Math.round(g.saved/g.target*100)):0;
+      const off=Math.round(383-(383*pct/100));
+      body='<div class="dt-kick">היעד שלכם</div><div class="dt-big" style="font-size:1.15rem">'+esc(g.name)+'</div>'+
+        '<div class="dt-ring"><svg width="130" height="130" viewBox="0 0 130 130">'+
+        '<defs><linearGradient id="dtg" x1="0" y1="0" x2="1" y2="1">'+
+        '<stop offset="0%" stop-color="var(--acc)"/><stop offset="100%" stop-color="var(--acc2)"/></linearGradient></defs>'+
+        '<circle cx="65" cy="65" r="61" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="9"/>'+
+        '<circle id="dt-ring-fg" cx="65" cy="65" r="61" fill="none" stroke="url(#dtg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="383" stroke-dashoffset="383" style="transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)"/>'+
+        '</svg><div class="dt-rt"><b>'+pct+'%</b><span>₪'+fmt(Math.round(g.saved))+' / ₪'+fmt(Math.round(g.target))+'</span></div></div>'+
+        (pct<100?'<div class="dt-stx">עוד ₪'+fmt(Math.round(g.target-g.saved))+' ואתם שם ✨</div>':'<div class="dt-stx">הגעתם ליעד! 🎉</div>');
+      setTimeout(()=>{const r=C('dt-ring-fg');if(r)r.style.strokeDashoffset=off;},120);
+    }
+  }else{
+    const exp=cur.filter(t=>t.type==='expense').sort((a,b)=>parseFloat(b.amount||0)-parseFloat(a.amount||0));
+    if(!exp.length){body='<div class="dt-kick">שיא התקופה</div><div class="dt-big" style="font-size:1.2rem">תקופה בלי הוצאות 👏</div>';}
+    else{
+      const t=exp[0];const all=getAllCats();
+      const ic=(all[t.category]&&all[t.category].i)||'📌';
+      body='<div class="dt-kick">שיא התקופה</div><div style="font-size:2.6rem">'+ic+'</div>'+
+        '<div class="dt-big" style="font-size:1.1rem">ההוצאה הגדולה ביותר</div>'+
+        '<div class="dt-huge" style="font-size:2.2rem">₪'+fmt(Math.round(parseFloat(t.amount||0)))+'</div>'+
+        '<div class="dt-stx">'+esc(t.note||t.category||'')+'</div>';
+    }
+  }
+  sc.innerHTML='<div class="dt-prog">'+pb+'</div><button class="dt-x" onclick="closeDate()">✕</button>'+
+    '<div class="dt-body" onclick="dtNext()">'+body+'</div><div class="dt-hint">הקש כדי להמשיך</div>';
+  dtStoryTimer=setTimeout(dtNext,7000);
+}
+function dtCount(id,target,dur){
+  const el=C(id);if(!el)return;let t0=null;
+  function step(ts){
+    if(!t0)t0=ts;
+    const p=Math.min((ts-t0)/dur,1),e=1-Math.pow(1-p,3);
+    if(!C(id))return;
+    C(id).textContent='₪'+fmt(Math.round(target*e));
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function dtQuestionView(sc){
+  const mine=dateAnswers.find(a=>a.user_id===user.id);
+  const others=dateAnswers.filter(a=>a.user_id!==user.id);
+  let chat='';
+  if(mine)chat+='<div class="dt-bub me"><span class="dt-who">'+esc(profile.name||'אני')+'</span>'+esc(mine.answer)+'</div>';
+  others.forEach(o=>{chat+='<div class="dt-bub you"><span class="dt-who">'+esc(o.user_name||'בן/בת הזוג')+'</span>'+esc(o.answer)+'</div>';});
+  if(mine&&!others.length)chat+='<div class="dt-wait"><span>ממתין לתשובה השנייה</span><span class="dt-dots"><i></i><i></i><i></i></span></div>';
+  if(!chat)chat='<div class="dt-wait"><span>עדיין אין תשובות בתקופה הזו</span></div>';
+  const input=mine?'':'<div class="dt-row"><input class="dt-inp" id="dt-ans" placeholder="התשובה שלך..." maxlength="200"><button class="dt-send" onclick="dtSaveAnswer()">שלח</button></div>';
+  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button><div class="dt-pad">'+
+    '<div class="dt-qh"><div class="dt-kick">💬 שאלת המפגש</div><div class="dt-qt">'+esc(dtQuestion())+'</div></div>'+
+    '<div class="dt-chat">'+chat+'</div>'+input+
+    '<button class="dt-next" style="margin-top:auto" onclick="dtStage=6;dtRender()">להחלטה המשותפת ←</button></div>';
+  const inp=C('dt-ans');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')dtSaveAnswer();});
+}
+async function dtSaveAnswer(){
+  const inp=C('dt-ans');if(!inp)return;
+  const v=inp.value.trim();if(!v)return;
+  inp.disabled=true;
+  const row={family_id:profile.family_id,period:dtKey(0),user_id:user.id,user_name:profile.name||'',answer:v};
+  const {error}=await sb.from('date_answers').upsert(row,{onConflict:'family_id,period,user_id'});
+  if(error){toast('שגיאה בשמירת התשובה');inp.disabled=false;return;}
+  dateAnswers=dateAnswers.filter(a=>a.user_id!==user.id).concat([row]);
+  dateAnswersAll=dateAnswersAll.filter(a=>!(a.user_id===user.id&&a.period===row.period)).concat([row]);
+  dtRender();
+}
+
+function dtDecisionView(sc){
+  const k=dtKey(0);
+  let list='';
+  dateDecisions.slice(0,6).forEach(d=>{
+    const isNow=d.period===k;
+    list+='<div class="dt-dec'+(isNow?'':' old')+'"><div class="dt-chk">✓</div>'+esc(d.txt)+
+      '<span class="dt-dd">'+(isNow?'עכשיו':esc(String(d.period||'')))+'</span></div>';
+  });
+  if(!list)list='<div class="dt-wait">עוד לא קבעתם החלטות משותפות</div>';
+  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button><div class="dt-pad">'+
+    '<div class="dt-qh"><div class="dt-kick">✅ החלטה משותפת</div><div class="dt-qt">מה מחליטים לתקופה הזו?</div></div>'+
+    '<div id="dt-dec-list">'+list+'</div>'+
+    '<div class="dt-row" style="margin-top:.6rem"><input class="dt-inp" id="dt-dec" placeholder="החלטה חדשה..." maxlength="120"><button class="dt-send" onclick="dtAddDecision()">הוסף</button></div>'+
+    '<button class="dt-next" style="margin-top:auto" onclick="dtFinish()">סיימנו את המפגש 🎉</button>'+
+    '<button class="dt-ghost" onclick="dtFinish()">דלג הפעם</button></div>';
+  const inp=C('dt-dec');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')dtAddDecision();});
+}
+async function dtAddDecision(){
+  const inp=C('dt-dec');if(!inp)return;
+  const v=inp.value.trim();if(!v)return;
+  inp.value='';
+  const row={family_id:profile.family_id,period:dtKey(0),txt:v,created_by:profile.name||''};
+  const {data,error}=await sb.from('date_decisions').insert(row).select();
+  if(error){toast('שגיאה בשמירת ההחלטה');return;}
+  dateDecisions=((data&&data[0])?[data[0]]:[row]).concat(dateDecisions);
+  renderDateTab();
+  dtRender();
+}
+
+async function dtFinish(){
+  const k=dtKey(0);
+  const {error}=await sb.from('date_log').upsert({family_id:profile.family_id,period:k,user_id:user.id},{onConflict:'family_id,period,user_id'});
+  if(error){toast('שגיאה בשמירה');return;}
+  if(!dateLog.some(l=>l.period===k&&l.user_id===user.id))dateLog.push({family_id:profile.family_id,period:k,user_id:user.id});
+  renderDateTab();
+  dtStage=7;dtRender();
+}
+function dtDoneView(sc){
+  const st=dtStreak();
+  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button>'+
+    '<div class="dt-body" id="dt-done"><div style="font-size:3.4rem;animation:dtpop .7s cubic-bezier(.2,1.5,.4,1)">🥂</div>'+
+    '<div class="dt-big">המפגש הושלם!</div>'+
+    (st>0?'<div class="dt-tag" style="background:var(--surface);border:1px solid var(--border);color:var(--txt);font-size:.85rem;padding:.5rem 1rem">🔥 '+st+' מפגשים ברצף</div>':'')+
+    '<div class="dt-stx">נתראה '+dtNextWord()+' 💜</div>'+
+    '<button class="dt-next" style="width:auto;padding:.75rem 2rem" onclick="closeDate()">חזרה הביתה</button></div>';
+  dtConfetti();
+  renderDateCard();
+}
+function dtConfetti(){
+  const box=C('dt-done');if(!box)return;
+  const cols=['#bf5af2','#ff6482','#ffd60a','#ffffff'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='dt-conf';
+    c.style.right=(Math.random()*100)+'%';
+    c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(1.6+Math.random()*1.6)+'s';
+    c.style.animationDelay=(Math.random()*0.6)+'s';
+    box.appendChild(c);
+    setTimeout(()=>c.remove(),3600);
+  }
+}
+
+function syncDateFreqBtns(){
+  const w=C('dtf-weekly'),m=C('dtf-monthly');if(!w||!m)return;
+  const on='linear-gradient(135deg,var(--acc),var(--acc2))';
+  w.style.background=dateFreq==='weekly'?on:'var(--surface)';
+  w.style.color=dateFreq==='weekly'?'#fff':'var(--txt2)';
+  w.style.borderColor=dateFreq==='weekly'?'transparent':'var(--border)';
+  m.style.background=dateFreq==='monthly'?on:'var(--surface)';
+  m.style.color=dateFreq==='monthly'?'#fff':'var(--txt2)';
+  m.style.borderColor=dateFreq==='monthly'?'transparent':'var(--border)';
+}
+async function setDateFreq(f){
+  if(!profile||!profile.family_id)return;
+  dateFreq=f;syncDateFreqBtns();
+  const {error}=await sb.from('family_settings').upsert({family_id:profile.family_id,date_freq:f,updated_at:new Date().toISOString()},{onConflict:'family_id'});
+  if(error){toast('שגיאה בשמירת התדירות');return;}
+  await loadDateData();
+}
 
 // ════ BUDGET ════
 // ── תקציב לפי חודשים ──
@@ -3549,7 +4037,7 @@ function renderGoals(){
 function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
   renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
-  renderInvPortfolio();renderBudget();renderHomeTxs();
+  renderInvPortfolio();renderBudget();renderHomeTxs();renderDateTab();
   renderStats();renderHistory();renderGoals();
   if(C('v-invest')&&C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
@@ -3815,7 +4303,7 @@ async function saveName(){
 
 // ════ FIX: goTab with invest ════
 function goTab(name){
-  ['home','stats','history','invest','goals'].forEach(n=>{
+  ['home','stats','history','invest','goals','date'].forEach(n=>{
     C('v-'+n).classList.toggle('on',n===name);
     C('tb-'+n).classList.toggle('on',n===name);
   });
@@ -3825,6 +4313,7 @@ function goTab(name){
   else if(name==='invest')renderInvestTab();
   else if(name==='history')renderHistory();
   else if(name==='goals')renderGoals();
+  else if(name==='date')renderDateTab();
   else render();
 }
 
