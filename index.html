@@ -559,6 +559,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes mtpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.65}}
 
 /* ══ 💜 MEETING (המפגש) ══ */
+#v-date .page{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 .mt-next{position:relative;border-radius:20px;padding:1rem;overflow:hidden;margin-bottom:.7rem;
   background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));border:1px solid var(--acc-b)}
 .mt-next::before{content:'';position:absolute;inset:-45%;
@@ -3132,6 +3133,8 @@ async function mtSavePlan(){
 
 /* ── start / open ── */
 async function mtStart(id){
+  const ex=mtActiveM();
+  if(!id&&ex){openMeet();return;}
   if(id){
     const m=meetings.find(x=>String(x.id)===String(id));
     const {error}=await sb.from('meetings').update({status:'active'}).eq('id',id);
@@ -3145,11 +3148,18 @@ async function mtStart(id){
   openMeet();
 }
 async function mtCancel(){
-  const m=mtActiveM();if(!m)return;
-  const {error}=await sb.from('meetings').delete().eq('id',m.id);
-  if(error){toast('שגיאה');return;}
-  meetings=meetings.filter(x=>x.id!==m.id);
+  const act=meetings.filter(m=>m.status==='active');
+  if(!act.length){renderMeetTab();return;}
+  let failed=0,msg='';
+  for(let i=0;i<act.length;i++){
+    const {error}=await sb.from('meetings').delete().eq('id',act[i].id);
+    if(error){failed++;msg=error.message||'';}
+  }
+  if(failed){toast('שגיאה בביטול'+(msg?': '+msg:''));await loadMeetData();return;}
+  meetings=meetings.filter(m=>m.status!=='active');
+  curMeet=null;
   renderMeetTab();
+  toast(act.length>1?'בוטלו '+act.length+' מפגשים ✓':'המפגש בוטל ✓');
 }
 function openMeet(){
   curMeet=mtActiveM();
@@ -3373,6 +3383,11 @@ async function mtFinish(){
   const {error}=await sb.from('meetings').update({status:'done',completed_at:iso}).eq('id',curMeet.id);
   if(error){toast('שגיאה בשמירה');return;}
   curMeet.status='done';curMeet.completed_at=iso;
+  const stale=meetings.filter(m=>m.status==='active'&&m.id!==curMeet.id);
+  for(let i=0;i<stale.length;i++){
+    await sb.from('meetings').delete().eq('id',stale[i].id);
+    meetings=meetings.filter(m=>m.id!==stale[i].id);
+  }
   mtStage='done';
   mtRender();
 }
