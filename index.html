@@ -270,7 +270,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border2);
   border-radius:20px;padding:.5rem 1rem;font-size:.78rem;font-weight:500;
-  white-space:nowrap;z-index:20;opacity:0;transition:opacity .25s;pointer-events:none}
+  white-space:nowrap;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none}
 #toast.on{opacity:1}
 
 /* ══ LOADING ══ */
@@ -555,111 +555,206 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
 .tab-btn{position:relative}
 #tb-date-dot{position:absolute;top:.1rem;right:26%;width:7px;height:7px;border-radius:99px;
-  background:var(--acc2);display:none;animation:dtpulse 1.8s infinite}
-@keyframes dtpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.65}}
-.dt-srow{display:flex;gap:.45rem;margin-bottom:.8rem}
-.dt-sbox{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;
-  padding:.6rem .3rem;text-align:center}
-.dt-sv{font-size:1.05rem;font-weight:900;color:var(--txt)}
-.dt-sl{font-size:.58rem;color:var(--txt2);margin-top:.1rem}
-.dt-qa{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:.6rem .7rem;margin-bottom:.45rem}
-.dt-qq{font-size:.68rem;color:var(--txt2);margin-bottom:.35rem;line-height:1.45}
-.dt-ans{font-size:.72rem;padding:.15rem 0;color:var(--txt);word-break:break-word}
-.dt-ans b{color:var(--acc)}
-.dt-empty{font-size:.72rem;color:var(--txt3);text-align:center;padding:.8rem 0}
+  background:var(--acc2);display:none;animation:mtpulse 1.8s infinite}
+@keyframes mtpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.65}}
 
-/* ══ 💜 DATE (המפגש הכספי) ══ */
-.dt-card{position:relative;border-radius:20px;padding:.9rem 1rem;overflow:hidden;cursor:pointer;
-  background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));
-  border:1px solid var(--acc-b);margin-bottom:.8rem;transition:transform .15s}
-.dt-card:active{transform:scale(.98)}
-.dt-card::before{content:'';position:absolute;inset:-45%;
-  background:conic-gradient(from 0deg,transparent 0 70%,var(--acc) 86%,transparent 100%);
-  animation:dtspin 6s linear infinite;opacity:.22}
-@keyframes dtspin{to{transform:rotate(360deg)}}
-.dt-card.done{background:var(--surface);border-color:var(--border)}
-.dt-card.done::before{display:none}
-.dt-in{position:relative;z-index:1}
-.dt-top{display:flex;align-items:center;gap:.6rem}
-.dt-emoji{font-size:1.6rem;animation:dtbeat 1.8s ease infinite}
-.dt-card.done .dt-emoji{animation:none}
-@keyframes dtbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.18)}24%{transform:scale(1)}}
-.dt-title{font-size:.92rem;font-weight:800;color:var(--txt)}
-.dt-sub{font-size:.68rem;color:var(--txt2);margin-top:.1rem}
-.dt-go{margin-right:auto;font-size:.72rem;font-weight:800;color:var(--acc)}
+/* ══ 💜 MEETING (המפגש) ══ */
+.mt-next{position:relative;border-radius:20px;padding:1rem;overflow:hidden;margin-bottom:.7rem;
+  background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));border:1px solid var(--acc-b)}
+.mt-next::before{content:'';position:absolute;inset:-45%;
+  background:conic-gradient(from 0deg,transparent 0 72%,var(--acc) 88%,transparent 100%);
+  animation:mtspin 7s linear infinite;opacity:.18}
+@keyframes mtspin{to{transform:rotate(360deg)}}
+.mt-nin{position:relative;z-index:1}
+.mt-kick{font-size:.6rem;font-weight:800;color:var(--acc);letter-spacing:.06em}
+.mt-date{font-size:1.15rem;font-weight:900;margin-top:.15rem;color:var(--txt)}
+.mt-cd{font-size:.68rem;color:var(--txt2);margin-top:.1rem}
+.mt-eic{font-size:2.4rem;text-align:center}
+.mt-et{font-size:.95rem;font-weight:800;text-align:center;color:var(--txt)}
+.mt-es{font-size:.7rem;color:var(--txt2);text-align:center;line-height:1.55;margin-top:.15rem}
+.mt-btns{display:flex;gap:.4rem;margin-top:.75rem}
+.mt-b{flex:1;border:none;border-radius:99px;padding:.7rem .5rem;font-size:.78rem;font-weight:800;
+  cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.mt-b:active{transform:scale(.96)}
+.mt-b.gh{background:var(--surface2);border:1px solid var(--border2);color:var(--txt)}
+.mt-srow{display:flex;gap:.4rem;margin-bottom:.7rem}
+.mt-sbox{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:.55rem .25rem;text-align:center}
+.mt-sv{font-size:1rem;font-weight:900;color:var(--txt)}
+.mt-sl{font-size:.55rem;color:var(--txt2);margin-top:.1rem}
+.mt-empty{font-size:.7rem;color:var(--txt3);text-align:center;padding:.7rem 0}
 
-.ov-date{align-items:stretch!important;background:rgba(0,0,0,.75)!important}
-.dt-screen{width:100%;display:flex;flex-direction:column;position:relative;
-  background:var(--bg-grad);background-color:var(--bg);overflow:hidden}
-.dt-prog{display:flex;gap:4px;padding:.9rem .8rem .3rem;z-index:5}
-.dt-pb{flex:1;height:3px;background:rgba(255,255,255,0.22);border-radius:99px;overflow:hidden}
-.dt-pb i{display:block;height:100%;width:0;background:#fff;border-radius:99px}
-.dt-pb.dn i{width:100%}
-.dt-pb.ac i{animation:dtfill 7s linear forwards}
-@keyframes dtfill{from{width:0}to{width:100%}}
-.dt-x{position:absolute;top:.75rem;left:.8rem;z-index:9;width:30px;height:30px;border-radius:99px;
-  background:rgba(255,255,255,0.14);border:none;color:#fff;font-size:.9rem;cursor:pointer;font-family:inherit}
-.dt-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:1rem 1.6rem;gap:.6rem;overflow-y:auto}
-.dt-kick{font-size:.72rem;font-weight:800;color:var(--acc);letter-spacing:.04em}
-.dt-big{font-size:1.5rem;font-weight:900;line-height:1.3;color:var(--txt)}
-.dt-huge{font-size:2.9rem;font-weight:900;letter-spacing:-.03em;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.dt-stx{font-size:.8rem;color:var(--txt2);line-height:1.6}
-.dt-tag{display:inline-block;border-radius:99px;padding:.25rem .7rem;font-size:.72rem;font-weight:700}
-.dt-hint{position:absolute;bottom:1rem;left:0;right:0;text-align:center;font-size:.6rem;color:var(--txt3)}
-.dt-bars{width:100%;display:flex;flex-direction:column;gap:.7rem;margin-top:.3rem}
-.dt-bl{display:flex;justify-content:space-between;font-size:.72rem;font-weight:600;margin-bottom:.25rem}
-.dt-bl b{color:var(--txt)}.dt-bl span{color:var(--txt2)}
-.dt-bt{height:8px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden}
-.dt-bf{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));
-  transition:width 1s cubic-bezier(.2,.8,.2,1)}
-.dt-ring{position:relative;width:130px;height:130px}
-.dt-ring svg{transform:rotate(-90deg)}
-.dt-rt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.dt-rt b{font-size:1.5rem;font-weight:900;color:var(--txt)}
-.dt-rt span{font-size:.6rem;color:var(--txt2)}
+.mt-hrow{display:flex;align-items:center;gap:.55rem;padding:.6rem 0;cursor:pointer;
+  border-bottom:1px solid var(--border)}
+.mt-hrow:last-child{border-bottom:none}
+.mt-hrow:active{opacity:.6}
+.mt-hd{width:36px;flex-shrink:0;text-align:center}
+.mt-hd b{display:block;font-size:.85rem;font-weight:900;line-height:1;color:var(--txt)}
+.mt-hd small{font-size:.5rem;color:var(--txt3)}
+.mt-hm{flex:1;min-width:0}
+.mt-h1{font-size:.72rem;font-weight:700;color:var(--txt)}
+.mt-h2{font-size:.6rem;color:var(--txt2);margin-top:.05rem}
+.mt-hmo{font-size:.85rem;flex-shrink:0}
+.mt-hgo{font-size:.7rem;color:var(--txt3);flex-shrink:0}
 
-.dt-pad{flex:1;display:flex;flex-direction:column;padding:3rem 1rem 1rem;overflow-y:auto}
-.dt-qh{text-align:center;margin-bottom:.9rem}
-.dt-qt{font-size:1.05rem;font-weight:800;line-height:1.45;margin-top:.35rem;color:var(--txt)}
-.dt-chat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:.8rem;margin-bottom:.7rem}
-.dt-bub{border-radius:15px;padding:.6rem .75rem;font-size:.8rem;line-height:1.55;max-width:88%;
-  margin-bottom:.5rem;animation:dtpop .35s cubic-bezier(.2,1.4,.4,1);word-break:break-word}
-@keyframes dtpop{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
-.dt-bub.me{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin-right:auto}
-.dt-bub.you{background:var(--surface2);border:1px solid var(--border);color:var(--txt);margin-left:auto}
-.dt-who{display:block;font-size:.58rem;opacity:.8;font-weight:700;margin-bottom:.15rem}
-.dt-wait{display:flex;align-items:center;gap:.4rem;color:var(--txt2);font-size:.7rem;padding:.3rem .2rem}
-.dt-dots{display:inline-flex;gap:3px}
-.dt-dots i{width:4px;height:4px;border-radius:99px;background:var(--txt2);animation:dtblink 1.2s infinite}
-.dt-dots i:nth-child(2){animation-delay:.2s}.dt-dots i:nth-child(3){animation-delay:.4s}
-@keyframes dtblink{0%,100%{opacity:.25}50%{opacity:1}}
-.dt-row{display:flex;gap:.5rem;margin-top:auto}
-.dt-inp{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:14px;
-  padding:.7rem .8rem;color:var(--txt);font-size:.82rem;font-family:inherit;outline:none}
-.dt-inp:focus{border-color:var(--acc-b)}
-.dt-send{border:none;border-radius:14px;padding:0 1rem;font-size:.8rem;font-weight:700;color:#fff;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;font-family:inherit}
-.dt-send:active{transform:scale(.95)}
-.dt-next{margin-top:.7rem;border:none;border-radius:99px;padding:.8rem;font-size:.88rem;font-weight:800;
-  color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;
-  font-family:inherit;width:100%;animation:dtpop .4s cubic-bezier(.2,1.4,.4,1)}
-.dt-ghost{margin-top:.5rem;border:1px solid var(--border2);background:transparent;color:var(--txt2);
-  border-radius:99px;padding:.65rem;font-size:.75rem;font-weight:600;width:100%;cursor:pointer;font-family:inherit}
-.dt-dec{display:flex;align-items:center;gap:.55rem;background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:.65rem .75rem;font-size:.78rem;color:var(--txt);margin-bottom:.45rem;
-  animation:dtpop .35s cubic-bezier(.2,1.4,.4,1)}
-.dt-chk{width:20px;height:20px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;
-  justify-content:center;font-size:.62rem;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
-.dt-dec.old .dt-chk{background:var(--surface2);color:var(--txt2)}
-.dt-dec.old{opacity:.7}
-.dt-dd{margin-right:auto;font-size:.58rem;color:var(--txt3);flex-shrink:0}
-.dt-conf{position:absolute;top:-12px;width:8px;height:13px;border-radius:2px;z-index:8;
-  animation:dtfall linear forwards}
-@keyframes dtfall{to{transform:translateY(110vh) rotate(720deg);opacity:.6}}
+.mt-dec-it{display:flex;align-items:center;gap:.5rem;font-size:.75rem;padding:.5rem 0;
+  border-bottom:1px solid var(--border);color:var(--txt)}
+.mt-dec-it:last-child{border-bottom:none}
+.mt-dec-it.off{opacity:.5}
+.mt-dec-it.off .mt-dx{text-decoration:line-through}
+.mt-dx{flex:1;word-break:break-word}
+.mt-dchk{width:19px;height:19px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.55rem;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.mt-dec-it.off .mt-dchk{background:var(--surface2);color:var(--txt3)}
+
+/* overlay screen */
+.ov-meet{align-items:stretch!important;background:rgba(0,0,0,.75)!important}
+.mt-screen{width:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;
+  background:var(--bg-grad);background-color:var(--bg)}
+.mt-pad{flex:1;overflow-y:auto;padding:3.4rem .9rem 4.8rem;display:flex;flex-direction:column;gap:.75rem}
+.mt-pad.nobar{padding-bottom:1.2rem}
+.mt-tbar{display:flex;align-items:center;gap:.6rem;padding:0 .1rem}
+.mt-x{width:29px;height:29px;border-radius:99px;flex-shrink:0;background:var(--surface2);
+  border:1px solid var(--border2);color:var(--txt);font-size:.8rem;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;justify-content:center}
+.mt-x:active{transform:scale(.9)}
+.mt-tt{flex:1;min-width:0}
+.mt-tt .t1{font-size:1rem;font-weight:900;color:var(--txt)}
+.mt-tt .t2{font-size:.62rem;color:var(--txt2);margin-top:.05rem}
+.mt-prog-n{font-size:.6rem;color:var(--txt2);font-weight:700;margin-bottom:.25rem}
+.mt-prog-tr{height:4px;background:rgba(128,128,140,0.2);border-radius:99px;overflow:hidden}
+.mt-prog-fl{height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2));
+  transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+.mt-list{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.mt-row{border-bottom:1px solid var(--border);transition:background .3s}
+.mt-row:last-child{border-bottom:none}
+.mt-row.open{background:var(--acc-d)}
+.mt-rh{display:flex;align-items:center;gap:.65rem;padding:.85rem .9rem}
+.mt-rtap{display:flex;align-items:center;gap:.65rem;flex:1;min-width:0;cursor:pointer}
+.mt-rico{font-size:1.05rem;flex-shrink:0;width:22px;text-align:center}
+.mt-rname{font-size:.82rem;font-weight:700;flex:1;min-width:0;color:var(--txt)}
+.mt-rmark{width:23px;height:23px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.6rem;background:transparent;color:transparent;
+  border:1.5px solid var(--border2);cursor:pointer;transition:all .3s}
+.mt-rmark:active{transform:scale(.85)}
+.mt-row.done .mt-rmark{background:var(--grn);border-color:var(--grn);color:#052d10;
+  animation:mtmp .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes mtmp{from{transform:scale(.3)}to{transform:scale(1)}}
+.mt-rb{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.3,.9,.3,1)}
+.mt-row.open .mt-rb{max-height:900px}
+.mt-rin{padding:0 .9rem .9rem}
+.mt-rdesc{font-size:.6rem;color:var(--txt2);margin-bottom:.55rem}
+.mt-sub{font-size:.6rem;font-weight:800;color:var(--txt2);margin:.6rem 0 .3rem}
+.mt-sub:first-child{margin-top:0}
+
+.mt-mrow{display:flex;align-items:center;gap:.5rem;padding:.25rem 0}
+.mt-mwho{font-size:.68rem;width:46px;color:var(--txt);font-weight:600}
+.mt-mopts{display:flex;gap:.3rem;flex:1}
+.mt-mo{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:11px;
+  padding:.4rem .15rem;text-align:center;cursor:pointer;transition:all .25s;font-family:inherit}
+.mt-mo:active{transform:scale(.93)}
+.mt-mo.sel{background:var(--acc-d);border-color:var(--acc-b)}
+.mt-mo .e{font-size:1rem}
+.mt-mo .l{font-size:.5rem;color:var(--txt2);margin-top:.05rem}
+.mt-lock{font-size:.58rem;color:var(--txt3);text-align:center;padding-top:.25rem}
+
+.mt-it{display:flex;align-items:center;gap:.45rem;font-size:.72rem;padding:.45rem 0;
+  border-bottom:1px solid var(--border);color:var(--txt)}
+.mt-it:last-child{border-bottom:none}
+.mt-ix{flex:1;word-break:break-word}
+.mt-yn{display:flex;gap:.25rem;flex-shrink:0}
+.mt-yb{border:1px solid var(--border2);background:var(--surface2);color:var(--txt2);
+  border-radius:8px;padding:.15rem .5rem;font-size:.6rem;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .22s}
+.mt-yb:active{transform:scale(.9)}
+.mt-yb.y.on{background:rgba(48,209,88,0.22);border-color:rgba(48,209,88,0.5);color:var(--grn)}
+.mt-yb.n.on{background:rgba(255,69,58,0.2);border-color:rgba(255,69,58,0.5);color:var(--red)}
+.mt-nchk{width:16px;height:16px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.5rem;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.mt-ntag{font-size:.52rem;color:var(--acc);flex-shrink:0}
+.mt-score{font-size:.62rem;color:var(--grn);font-weight:800;text-align:center;padding:.35rem 0}
+
+.mt-inrow{display:flex;gap:.3rem;margin-top:.5rem}
+.mt-inp{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;
+  padding:.5rem .6rem;color:var(--txt);font-size:.72rem;font-family:inherit;outline:none;min-width:0}
+.mt-inp::placeholder{color:var(--txt3)}
+.mt-inp:focus{border-color:var(--acc-b)}
+.mt-inp.sm{max-width:74px;text-align:center}
+select.mt-inp{appearance:none}
+.mt-add{border:none;border-radius:10px;padding:0 .8rem;font-size:.72rem;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;font-family:inherit;flex-shrink:0}
+.mt-add:active{transform:scale(.94)}
+
+.mt-svrow{margin-bottom:.6rem}
+.mt-svrow:last-child{margin-bottom:0}
+.mt-svtop{display:flex;justify-content:space-between;font-size:.66rem;margin-bottom:.25rem;color:var(--txt)}
+.mt-svtop span{color:var(--txt2);font-weight:700;font-size:.58rem}
+.mt-svtr{height:5px;background:rgba(128,128,140,0.2);border-radius:99px;overflow:hidden}
+.mt-svfl{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));
+  transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.mt-svadd{font-size:.55rem;color:var(--grn);font-weight:800;margin-top:.2rem}
+
+.mt-mpick{display:flex;gap:.3rem;margin-bottom:.55rem}
+.mt-mp{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:.4rem .15rem;text-align:center;cursor:pointer;font-family:inherit;transition:all .25s;color:var(--txt2)}
+.mt-mp:active{transform:scale(.93)}
+.mt-mp.sel{background:var(--acc-d);border-color:var(--acc-b);color:var(--txt)}
+.mt-mp b{display:block;font-size:.68rem;font-weight:800}
+.mt-mp small{font-size:.5rem}
+.mt-bnote{font-size:.58rem;color:var(--txt2);line-height:1.5;margin-bottom:.55rem}
+.mt-brow{display:flex;align-items:center;gap:.5rem;padding:.3rem 0}
+.mt-bn{flex:1;font-size:.68rem;color:var(--txt)}
+.mt-bcur{font-size:.55rem;color:var(--txt3)}
+.mt-bin{width:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+  padding:.35rem;color:var(--txt);font-size:.68rem;font-family:inherit;outline:none;text-align:center}
+.mt-bin:focus{border-color:var(--acc-b)}
+.mt-bin.chg{border-color:rgba(48,209,88,0.5);color:var(--grn)}
+.mt-ar{font-size:.6rem;color:var(--txt3);flex-shrink:0}
+
+.mt-bbar{position:absolute;bottom:0;left:0;right:0;padding:.55rem .9rem calc(.9rem + env(safe-area-inset-bottom,0px));
+  z-index:20;background:linear-gradient(to top,var(--bg) 62%,transparent)}
+.mt-fin{width:100%;border:none;border-radius:99px;padding:.8rem;font-size:.82rem;font-weight:800;
+  cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.mt-fin:active{transform:scale(.97)}
+
+.mt-dsec{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.7rem .75rem}
+.mt-dst{font-size:.62rem;font-weight:800;color:var(--txt2);margin-bottom:.4rem}
+.mt-dl{display:flex;align-items:center;gap:.4rem;font-size:.72rem;padding:.2rem 0;color:var(--txt)}
+.mt-dl .di{flex-shrink:0;font-size:.68rem}
+.mt-dl .dx{flex:1;word-break:break-word}
+.mt-ok{color:var(--grn)}.mt-no{color:var(--red)}
+.mt-dmood{display:flex;gap:.5rem}
+.mt-dmb{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:11px;
+  padding:.5rem;text-align:center}
+.mt-dmb .e{font-size:1.25rem}
+.mt-dmb .w{font-size:.55rem;color:var(--txt2);margin-top:.1rem}
+.mt-badge{display:inline-block;font-size:.55rem;font-weight:800;padding:.05rem .4rem;border-radius:20px;
+  background:rgba(48,209,88,0.15);color:var(--grn);border:1px solid rgba(48,209,88,0.3)}
+
+.mt-done{flex:1;overflow-y:auto;padding:3.4rem 1rem 1.5rem;display:flex;flex-direction:column;
+  align-items:center;gap:.65rem;position:relative}
+.mt-demo{font-size:3rem;animation:mtbp .7s cubic-bezier(.2,1.5,.4,1)}
+@keyframes mtbp{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+.mt-dbig{font-size:1.35rem;font-weight:900;color:var(--txt)}
+.mt-pill{background:var(--surface);border:1px solid var(--border);border-radius:99px;
+  padding:.45rem 1rem;font-size:.8rem;font-weight:800;color:var(--txt)}
+.mt-dcard{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:.75rem .8rem}
+.mt-nextq{width:100%;border-radius:16px;padding:.8rem;text-align:center;
+  background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));border:1px solid var(--acc-b)}
+.mt-nqt{font-size:.75rem;font-weight:800;color:var(--txt)}
+.mt-nqs{font-size:.6rem;color:var(--txt2);margin-top:.1rem}
+.mt-conf{position:absolute;top:-12px;width:8px;height:13px;border-radius:2px;z-index:8;
+  animation:mtfall linear forwards}
+@keyframes mtfall{to{transform:translateY(115vh) rotate(720deg);opacity:.6}}
+.mt-qb{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--txt);
+  border-radius:13px;padding:.6rem .7rem;font-size:.72rem;font-weight:600;font-family:inherit;
+  cursor:pointer;text-align:right;display:flex;justify-content:space-between;margin-bottom:.3rem}
+.mt-qb:active{transform:scale(.97)}
+.mt-qb.sel{background:var(--acc-d);border-color:var(--acc-b)}
+.mt-qb small{color:var(--txt2);font-weight:500}
 </style>
 <script>
 // Minimal Supabase Client v3 - explicit Promise pattern (no thenable)
@@ -1215,17 +1310,22 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <!-- GOALS -->
     <div class="view" id="v-date"><div class="page">
 
-      <div id="date-card-slot"></div>
-      <div id="dt-stats"></div>
+      <div id="mt-top"></div>
+      <div id="mt-stats"></div>
 
       <div class="card glass">
         <div class="card-head">✅ ההחלטות שלנו</div>
-        <div id="dt-dec-all"></div>
+        <div id="mt-decs"></div>
       </div>
 
       <div class="card glass">
-        <div class="card-head">💬 מה ענינו בעבר</div>
-        <div id="dt-arch"></div>
+        <div class="card-head">🏦 החיסכונות שלנו</div>
+        <div id="mt-goals"></div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-head">🕐 מפגשים קודמים</div>
+        <div id="mt-hist"></div>
       </div>
 
     </div></div>
@@ -1302,9 +1402,29 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   <div id="toast"></div>
 
   <!-- ADD TX -->
-  <div class="ov ov-date" id="ov-date">
-    <div class="dt-screen" id="dt-screen"></div>
+  <div class="ov ov-meet" id="ov-meet">
+    <div class="mt-screen" id="mt-screen"></div>
   </div>
+
+  <div class="ov" id="ov-mtplan" onclick="if(event.target===this)C('ov-mtplan').classList.remove('on')">
+    <div class="sheet">
+      <div class="sh-handle"></div><div class="sh-title">📅 מתי ניפגש?</div>
+      <button class="mt-qb" id="mtq-tonight" onclick="mtQuick('tonight')"><span>הערב</span><small>20:30</small></button>
+      <button class="mt-qb" id="mtq-fri" onclick="mtQuick('fri')"><span>יום שישי הקרוב</span><small>20:30</small></button>
+      <button class="mt-qb" id="mtq-sat" onclick="mtQuick('sat')"><span>מוצאי שבת</span><small>21:00</small></button>
+      <button class="mt-qb" id="mtq-month" onclick="mtQuick('month')"><span>1 בחודש הבא</span><small>20:00</small></button>
+      <div class="mt-inrow" style="margin-top:.6rem">
+        <input class="mt-inp" type="date" id="mtp-date">
+        <input class="mt-inp" type="time" id="mtp-time" value="20:30">
+      </div>
+      <div class="mt-btns" style="margin-top:.8rem">
+        <button class="mt-b gh" onclick="C('ov-mtplan').classList.remove('on')">ביטול</button>
+        <button class="mt-b" onclick="mtSavePlan()">קבע מפגש</button>
+      </div>
+    </div>
+  </div>
+
+
 
   <div class="ov" id="ov-add" onclick="if(event.target===this)closeAdd()">
   <div class="sheet">
@@ -1602,13 +1722,6 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
           <button id="skin-grn" onclick="setSkin('grn',event)" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">💚 ירוק</button>
         </div>
       </div>
-      <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:.85rem;color:var(--txt)">💜 תדירות המפגש הכספי</div>
-        <div style="display:flex;gap:.35rem">
-          <button id="dtf-weekly" onclick="setDateFreq('weekly')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">שבועי</button>
-          <button id="dtf-monthly" onclick="setDateFreq('monthly')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--surface);border:1px solid var(--border);color:var(--txt2)">חודשי</button>
-        </div>
-      </div>
       <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="C('ov-profile').classList.remove('on');openCatModal()">
         <div style="font-size:.85rem;color:var(--txt)">🏷️ קטגוריות מותאמות</div>
         <div style="font-size:.75rem;color:var(--blu)">›</div>
@@ -1738,7 +1851,8 @@ let user=null, profile=null, family=null, familySettings=null;
 let histView='date';
 let txReactions={};
 let budRows=[];
-let dateAnswers=[], dateAnswersAll=[], dateDecisions=[], dateLog=[], dtStage=0, dtStoryTimer=null, dtPollTimer=null, dateFreq='weekly';
+let meetings=[], mDecs=[], mReviews=[], mMoods=[], mSavings=[], mBudChg=[];
+let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live';
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -2382,7 +2496,7 @@ async function loadUserData(){
 
   // subscribe to realtime
   subscribeRealtime();
-  loadDateData();
+  loadMeetData();
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
@@ -2848,353 +2962,513 @@ async function saveOb(){
 
 
 
-// ════════ 💜 המפגש הכספי ════════
-const DT_QS=[
- 'אם היו לנו ₪1,000 פנויים החודש — על מה היית שם אותם?',
- 'מה ההוצאה שהכי שמחת עליה בתקופה האחרונה?',
- 'מה ההוצאה שהכי התחרטת עליה?',
- 'איזה דבר קטן היית רוצה שנפנק בו את עצמנו?',
- 'מה מלחיץ אותך הכי הרבה בכסף שלנו כרגע?',
- 'איזה יעד היית רוצה שנתחיל לחסוך אליו?',
- 'אם היינו חייבים לקצץ ₪500 החודש — מאיפה?',
- 'מה הדבר הכי טוב שקנינו יחד השנה?',
- 'איך היית רוצה שנראה כלכלית בעוד שנה?',
- 'מה החלום היקר שאתה הכי רוצה שנגשים?',
- 'על מה אתה מרגיש שאנחנו מוציאים יותר מדי?',
- 'על מה דווקא שווה לנו להוציא יותר?',
- 'מה היית עושה עם בונוס פתאומי של ₪5,000?',
- 'איזו הרגלה כספית היית רוצה שנשנה יחד?',
- 'מה גורם לך להרגיש בטוח כלכלית?',
- 'איזה חוויה משותפת שווה בעינייך כל שקל?',
- 'אם היינו יכולים לקפוא לחודש בלי הוצאות — לאן היינו הולכים?',
- 'מה למדת על עצמך בקשר לכסף לאחרונה?',
- 'איזה דבר אחד היית רוצה שנעשה אחרת בחודש הבא?',
- 'על מה אתה הכי גאה בנו כלכלית?'
-];
-function dtFmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function dtAnchor(d){
-  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
-  if(dateFreq==='monthly')return new Date(x.getFullYear(),x.getMonth(),1);
-  x.setDate(x.getDate()-x.getDay());return x;
-}
-function dtKeyOf(d){
-  const a=dtAnchor(d);
-  if(dateFreq==='monthly')return a.getFullYear()+'-'+String(a.getMonth()+1).padStart(2,'0');
-  const jan1=new Date(a.getFullYear(),0,1);
-  const wk=Math.floor((a-jan1)/604800000)+1;
-  return a.getFullYear()+'-W'+String(wk).padStart(2,'0');
-}
-function dtShift(n){const d=new Date();if(dateFreq==='monthly')d.setMonth(d.getMonth()-n);else d.setDate(d.getDate()-7*n);return d;}
-function dtKey(n){return dtKeyOf(dtShift(n||0));}
-function dtRange(n){
-  const a=dtAnchor(dtShift(n||0));let e;
-  if(dateFreq==='monthly')e=new Date(a.getFullYear(),a.getMonth()+1,0);
-  else{e=new Date(a);e.setDate(e.getDate()+6);}
-  return{s:dtFmtD(a),e:dtFmtD(e)};
-}
-function dtTxs(n){const r=dtRange(n||0);return txs.filter(t=>{const d=(t.date||'').substring(0,10);return d>=r.s&&d<=r.e;});}
-function dtSum(list){return list.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount||0),0);}
-function dtDone(){const k=dtKey(0);return dateLog.some(l=>l.period===k);}
-function dtStreak(){let n=dtDone()?0:1,c=0;while(c<80){if(dateLog.some(l=>l.period===dtKey(n))){c++;n++;}else break;}return c;}
-function dtSeed(k){let s=0;for(let i=0;i<k.length;i++)s+=k.charCodeAt(i)*(i+1);return s;}
-function dtQuestionFor(k){return DT_QS[dtSeed(String(k||''))%DT_QS.length];}
-function dtQuestion(){return dtQuestionFor(dtKey(0));}
-function dtWord(){return dateFreq==='monthly'?'החודשי':'השבועי';}
-function dtNextWord(){return dateFreq==='monthly'?'בחודש הבא':'בשבוע הבא';}
+// ════════ 💜 המפגש ════════
+const MT_MOODS=[{e:'😌',l:'רגוע'},{e:'🙂',l:'בסדר'},{e:'😰',l:'לחוץ'}];
 
-async function loadDateData(){
+function mtPad(n){return String(n).padStart(2,'0');}
+function mtMonthKey(off){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+off);return d.getFullYear()+'-'+mtPad(d.getMonth()+1);}
+function mtMonthName(off){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+off);return MHE[d.getMonth()];}
+function mtShortDate(iso){if(!iso)return '';const d=new Date(iso);return d.getDate()+'.'+(d.getMonth()+1);}
+function mtPlanned(){return meetings.find(m=>m.status==='planned');}
+function mtActiveM(){return meetings.find(m=>m.status==='active');}
+function mtDoneList(){return meetings.filter(m=>m.status==='done');}
+function mtActiveDecs(){return mDecs.filter(d=>d.active!==false);}
+function mtDaysSince(){
+  const done=mtDoneList();
+  if(!done.length)return null;
+  const last=done.map(m=>new Date(m.completed_at||m.created_at)).sort((a,b)=>b-a)[0];
+  return Math.floor((Date.now()-last.getTime())/86400000);
+}
+
+async function loadMeetData(){
   if(!profile||!profile.family_id)return;
-  dateFreq=(familySettings&&familySettings.date_freq)||'weekly';
-  syncDateFreqBtns();
-  const k=dtKey(0);
   try{
-    const [a,d,l]=await Promise.all([
-      sb.from('date_answers').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}).limit(60),
-      sb.from('date_decisions').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
-      sb.from('date_log').select('*').eq('family_id',profile.family_id)
+    const [a,b,c,d,e,f]=await Promise.all([
+      sb.from('meetings').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
+      sb.from('meeting_decisions').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
+      sb.from('decision_reviews').select('*').eq('family_id',profile.family_id),
+      sb.from('meeting_moods').select('*').eq('family_id',profile.family_id),
+      sb.from('meeting_savings').select('*').eq('family_id',profile.family_id),
+      sb.from('meeting_bud_changes').select('*').eq('family_id',profile.family_id)
     ]);
-    dateAnswersAll=a.data||[];
-    dateAnswers=dateAnswersAll.filter(x=>x.period===k);
-    dateDecisions=d.data||[];dateLog=l.data||[];
-  }catch(e){}
-  renderDateTab();
+    meetings=a.data||[];mDecs=b.data||[];mReviews=c.data||[];
+    mMoods=d.data||[];mSavings=e.data||[];mBudChg=f.data||[];
+  }catch(err){}
+  renderMeetTab();
 }
 
-function renderDateCard(){
+function renderMeetTab(){
   const dot=C('tb-date-dot');
-  if(dot)dot.style.display=dtDone()?'none':'block';
-  const el=C('date-card-slot');if(!el)return;
-  const st=dtStreak();
-  if(dtDone()){
-    el.innerHTML='<div class="dt-card done" onclick="openDate()"><div class="dt-in"><div class="dt-top">'+
-      '<div class="dt-emoji">✅</div><div><div class="dt-title">המפגש '+dtWord()+' הושלם</div>'+
-      '<div class="dt-sub">'+(st>0?'🔥 '+st+' ברצף · ':'')+'נתראה '+dtNextWord()+'</div></div>'+
-      '<div class="dt-go">צפה ←</div></div></div></div>';
-    return;
+  if(dot){
+    const p=mtPlanned();
+    const due=p&&p.scheduled_at&&new Date(p.scheduled_at)<=new Date();
+    dot.style.display=(due||mtActiveM())?'block':'none';
   }
-  const mine=dateAnswers.some(a=>a.user_id===user.id);
-  const sub=mine?'ענית ✓ · ממתין לסיום יחד':(st>0?'🔥 '+st+' ברצף · 3 דקות':'סיכום התקופה מחכה לשניכם · 3 דקות');
-  el.innerHTML='<div class="dt-card" onclick="openDate()"><div class="dt-in"><div class="dt-top">'+
-    '<div class="dt-emoji">💜</div><div><div class="dt-title">המפגש '+dtWord()+' שלכם מוכן</div>'+
-    '<div class="dt-sub">'+sub+'</div></div><div class="dt-go">התחילו ←</div></div></div></div>';
-}
-
-function renderDateTab(){
-  renderDateCard();
-  const st=C('dt-stats');
+  const top=C('mt-top');if(!top)return;
+  const act=mtActiveM(),pl=mtPlanned();
+  if(act){
+    top.innerHTML='<div class="mt-next"><div class="mt-nin"><div class="mt-kick">מפגש פתוח</div>'+
+      '<div class="mt-date">יש מפגש שלא סיימתם</div>'+
+      '<div class="mt-cd">התחלתם ב-'+esc(mtShortDate(act.created_at))+' · אפשר להמשיך מאיפה שעצרתם</div>'+
+      '<div class="mt-btns"><button class="mt-b" onclick="openMeet()">המשך ←</button>'+
+      '<button class="mt-b gh" onclick="mtCancel()">בטל מפגש</button></div></div></div>';
+  }else if(pl){
+    const d=new Date(pl.scheduled_at);
+    const days=Math.ceil((d-new Date())/86400000);
+    const when=days<0?'המועד עבר':days===0?'היום':days===1?'מחר':'בעוד '+days+' ימים';
+    top.innerHTML='<div class="mt-next"><div class="mt-nin"><div class="mt-kick">המפגש הבא</div>'+
+      '<div class="mt-date">'+esc(d.getDate()+'.'+(d.getMonth()+1)+' · '+mtPad(d.getHours())+':'+mtPad(d.getMinutes()))+'</div>'+
+      '<div class="mt-cd">'+esc(when)+'</div>'+
+      '<div class="mt-btns"><button class="mt-b" onclick="mtStart(\''+pl.id+'\')">התחל עכשיו</button>'+
+      '<button class="mt-b gh" onclick="mtOpenPlan()">שנה מועד</button></div></div></div>';
+  }else{
+    top.innerHTML='<div class="card glass" style="margin-bottom:.7rem"><div class="mt-eic">💜</div>'+
+      '<div class="mt-et">אין מפגש מתוכנן</div>'+
+      '<div class="mt-es">קבעו מועד, או פשוט התחילו עכשיו<br>כשמתחשק לכם לשבת יחד</div>'+
+      '<div class="mt-btns"><button class="mt-b gh" onclick="mtOpenPlan()">📅 קבע מועד</button>'+
+      '<button class="mt-b" onclick="mtStart()">⚡ התחל עכשיו</button></div></div>';
+  }
+  const st=C('mt-stats');
   if(st){
-    const ps={};dateLog.forEach(l=>{ps[l.period]=1;});
-    st.innerHTML='<div class="dt-srow">'+
-      '<div class="dt-sbox"><div class="dt-sv">\uD83D\uDD25 '+dtStreak()+'</div><div class="dt-sl">ברצף</div></div>'+
-      '<div class="dt-sbox"><div class="dt-sv">'+Object.keys(ps).length+'</div><div class="dt-sl">סה״כ מפגשים</div></div>'+
-      '<div class="dt-sbox"><div class="dt-sv">'+dateDecisions.length+'</div><div class="dt-sl">החלטות</div></div></div>';
+    const ds=mtDaysSince();
+    st.innerHTML='<div class="mt-srow">'+
+      '<div class="mt-sbox"><div class="mt-sv">💜 '+mtDoneList().length+'</div><div class="mt-sl">מפגשים</div></div>'+
+      '<div class="mt-sbox"><div class="mt-sv">'+mtActiveDecs().length+'</div><div class="mt-sl">החלטות פעילות</div></div>'+
+      '<div class="mt-sbox"><div class="mt-sv">'+(ds===null?'—':ds)+'</div><div class="mt-sl">ימים מהאחרון</div></div></div>';
   }
-  const dl=C('dt-dec-all');
+  const dl=C('mt-decs');
   if(dl){
-    const k=dtKey(0);let h='';
-    dateDecisions.slice(0,15).forEach(d=>{
-      h+='<div class="dt-dec'+(d.period===k?'':' old')+'"><div class="dt-chk">✓</div>'+esc(d.txt)+
-         '<span class="dt-dd">'+esc(String(d.period||''))+'</span></div>';
-    });
-    dl.innerHTML=h||'<div class="dt-empty">עוד לא קבעתם החלטות משותפות</div>';
-  }
-  const ar=C('dt-arch');
-  if(ar){
-    const by={};
-    dateAnswersAll.forEach(a=>{(by[a.period]=by[a.period]||[]).push(a);});
-    const keys=Object.keys(by).sort().reverse().slice(0,6);
     let h='';
-    keys.forEach(p=>{
-      h+='<div class="dt-qa"><div class="dt-qq">'+esc(dtQuestionFor(p))+'</div>';
-      by[p].forEach(a=>{h+='<div class="dt-ans"><b>'+esc(a.user_name||'—')+':</b> '+esc(a.answer)+'</div>';});
-      h+='</div>';
+    mDecs.slice(0,20).forEach(d=>{
+      h+='<div class="mt-dec-it'+(d.active===false?' off':'')+'">'+
+         '<div class="mt-dchk" onclick="mtToggleDec(\''+d.id+'\')">✓</div>'+
+         '<div class="mt-dx">'+esc(d.txt)+'</div></div>';
     });
-    ar.innerHTML=h||'<div class="dt-empty">עוד אין תשובות שמורות</div>';
+    dl.innerHTML=h||'<div class="mt-empty">עוד לא קבעתם החלטות משותפות</div>';
+  }
+  const sv=C('mt-goals');
+  if(sv){
+    let h='';
+    goals.forEach(g=>{
+      const t=parseFloat(g.target||0),s=parseFloat(g.saved||0);
+      const p=t>0?Math.min(100,Math.round(s/t*100)):0;
+      h+='<div class="mt-svrow"><div class="mt-svtop"><b>'+esc(g.name)+'</b>'+
+         '<span>₪'+fmt(Math.round(s))+' / ₪'+fmt(Math.round(t))+'</span></div>'+
+         '<div class="mt-svtr"><div class="mt-svfl" style="width:'+p+'%"></div></div></div>';
+    });
+    sv.innerHTML=h||'<div class="mt-empty">עוד לא הגדרתם יעדים</div>';
+  }
+  const hs=C('mt-hist');
+  if(hs){
+    let h='';
+    mtDoneList().slice(0,12).forEach(m=>{
+      const d=new Date(m.completed_at||m.created_at);
+      const nd=mDecs.filter(x=>x.meeting_id===m.id).length;
+      const sv2=mSavings.filter(x=>x.meeting_id===m.id).reduce((s,x)=>s+parseFloat(x.amount||0),0);
+      const rv=mReviews.filter(x=>x.meeting_id===m.id);
+      const kept=rv.filter(x=>x.kept).length;
+      const bc=mBudChg.filter(x=>x.meeting_id===m.id).length;
+      const mine=mMoods.find(x=>x.meeting_id===m.id&&x.user_id===user.id);
+      const p1=[];
+      if(nd)p1.push(nd+' החלטות');
+      if(sv2>0)p1.push('₪'+fmt(Math.round(sv2))+' חיסכון');
+      const p2=[];
+      if(rv.length)p2.push('עמדתם ב-'+kept+' מתוך '+rv.length);
+      if(bc)p2.push('תקציב עודכן');
+      h+='<div class="mt-hrow" onclick="mtDetail(\''+m.id+'\')">'+
+         '<div class="mt-hd"><b>'+d.getDate()+'</b><small>'+MHE[d.getMonth()]+'</small></div>'+
+         '<div class="mt-hm"><div class="mt-h1">'+esc(p1.length?p1.join(' · '):'מפגש קצר')+'</div>'+
+         '<div class="mt-h2">'+esc(p2.length?p2.join(' · '):'בלי שינויים')+'</div></div>'+
+         '<div class="mt-hmo">'+(mine?esc(mine.mood):'')+'</div><div class="mt-hgo">‹</div></div>';
+    });
+    hs.innerHTML=h||'<div class="mt-empty">כאן יופיעו המפגשים שלכם</div>';
   }
 }
-function openDate(){dtStage=0;C('ov-date').classList.add('on');dtRender();dtStartPoll();}
-function closeDate(){
-  C('ov-date').classList.remove('on');
-  clearTimeout(dtStoryTimer);clearInterval(dtPollTimer);dtPollTimer=null;
-  renderDateTab();
-}
-function dtStartPoll(){
-  clearInterval(dtPollTimer);
-  dtPollTimer=setInterval(async()=>{
-    if(!profile||!profile.family_id)return;
-    try{
-      const {data}=await sb.from('date_answers').select('*').eq('family_id',profile.family_id).eq('period',dtKey(0));
-      const fresh=data||[];
-      if(JSON.stringify(fresh.map(x=>x.id).sort())!==JSON.stringify(dateAnswers.map(x=>x.id).sort())){
-        dateAnswers=fresh;
-        if(dtStage===5)dtRender();
-      }
-    }catch(e){}
-  },6000);
+
+async function mtToggleDec(id){
+  const d=mDecs.find(x=>String(x.id)===String(id));if(!d)return;
+  const nv=!(d.active!==false);
+  d.active=nv;
+  renderMeetTab();
+  const {error}=await sb.from('meeting_decisions').update({active:nv}).eq('id',id);
+  if(error){toast('שגיאה בעדכון');d.active=!nv;renderMeetTab();}
 }
 
-function dtRender(){
-  const sc=C('dt-screen');if(!sc)return;
-  clearTimeout(dtStoryTimer);
-  if(dtStage<5){dtStory(sc);return;}
-  if(dtStage===5){dtQuestionView(sc);return;}
-  if(dtStage===6){dtDecisionView(sc);return;}
-  dtDoneView(sc);
+/* ── schedule sheet ── */
+function mtOpenPlan(){
+  const d=new Date();d.setDate(d.getDate()+1);
+  const di=C('mtp-date');if(di)di.value=d.getFullYear()+'-'+mtPad(d.getMonth()+1)+'-'+mtPad(d.getDate());
+  C('ov-mtplan').classList.add('on');
 }
-function dtNext(){dtStage++;dtRender();}
+function mtQuick(kind){
+  const d=new Date();
+  if(kind==='tonight'){}
+  else if(kind==='fri'){d.setDate(d.getDate()+((5-d.getDay()+7)%7||7));}
+  else if(kind==='sat'){d.setDate(d.getDate()+((6-d.getDay()+7)%7||7));}
+  else{d.setMonth(d.getMonth()+1);d.setDate(1);}
+  C('mtp-date').value=d.getFullYear()+'-'+mtPad(d.getMonth()+1)+'-'+mtPad(d.getDate());
+  C('mtp-time').value=kind==='sat'?'21:00':'20:30';
+  document.querySelectorAll('#ov-mtplan .mt-qb').forEach(b=>b.classList.remove('sel'));
+  const el=C('mtq-'+kind);if(el)el.classList.add('sel');
+}
+async function mtSavePlan(){
+  const dv=C('mtp-date').value,tv=C('mtp-time').value||'20:30';
+  if(!dv){toast('בחר תאריך');return;}
+  const iso=new Date(dv+'T'+tv+':00').toISOString();
+  const ex=mtPlanned();
+  if(ex){
+    const {error}=await sb.from('meetings').update({scheduled_at:iso}).eq('id',ex.id);
+    if(error){toast('שגיאה בשמירה');return;}
+    ex.scheduled_at=iso;
+  }else{
+    const {data,error}=await sb.from('meetings').insert({family_id:profile.family_id,scheduled_at:iso,status:'planned',created_by:profile.name||''}).select();
+    if(error){toast('שגיאה בשמירה');return;}
+    if(data&&data[0])meetings.unshift(data[0]);
+  }
+  C('ov-mtplan').classList.remove('on');
+  toast('המפגש נקבע 📅');
+  renderMeetTab();
+}
 
-function dtStory(sc){
-  let pb='';
-  for(let i=0;i<5;i++)pb+='<div class="dt-pb '+(i<dtStage?'dn':i===dtStage?'ac':'')+'"><i></i></div>';
-  let body='';
-  const cur=dtTxs(0),prev=dtTxs(1);
-  const curSum=dtSum(cur),prevSum=dtSum(prev);
-  if(dtStage===0){
-    const r=dtRange(0);
-    body='<div style="font-size:2.6rem">💜</div>'+
-      '<div class="dt-kick">'+esc(r.s.substring(8)+'.'+r.s.substring(5,7))+' – '+esc(r.e.substring(8)+'.'+r.e.substring(5,7))+'</div>'+
-      '<div class="dt-big">המפגש הכספי<br>שלכם</div>'+
-      '<div class="dt-stx">סיכום קצר, שאלה אחת,<br>והחלטה משותפת</div>';
-  }else if(dtStage===1){
-    let tag='';
-    if(prevSum>0){
-      const diff=Math.round((curSum-prevSum)/prevSum*100);
-      if(diff<0)tag='<div class="dt-tag" style="background:rgba(48,209,88,0.14);color:var(--grn);border:1px solid rgba(48,209,88,0.25)">↓ '+Math.abs(diff)+'% פחות מהתקופה הקודמת</div>';
-      else if(diff>0)tag='<div class="dt-tag" style="background:rgba(255,69,58,0.14);color:var(--red);border:1px solid rgba(255,69,58,0.25)">↑ '+diff+'% יותר מהתקופה הקודמת</div>';
-    }
-    body='<div class="dt-kick">התקופה במספרים</div><div class="dt-stx">הוצאתם</div>'+
-      '<div class="dt-huge" id="dt-cnt">₪0</div>'+tag;
-    setTimeout(()=>dtCount('dt-cnt',curSum,1200),80);
-  }else if(dtStage===2){
-    const tots={};
-    cur.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+parseFloat(t.amount||0);});
-    const top=Object.keys(tots).sort((a,b)=>tots[b]-tots[a]).slice(0,3);
-    if(!top.length){body='<div class="dt-kick">לאן הלך הכסף</div><div class="dt-big" style="font-size:1.2rem">אין הוצאות בתקופה הזו 🎉</div>';}
-    else{
-      const max=tots[top[0]];let bars='';
-      const all=getAllCats();
-      top.forEach(c=>{
-        const ic=(all[c]&&all[c].i)||'📌';
-        bars+='<div><div class="dt-bl"><b>'+ic+' '+esc(c)+'</b><span>₪'+fmt(Math.round(tots[c]))+'</span></div>'+
-          '<div class="dt-bt"><div class="dt-bf" data-w="'+Math.round(tots[c]/max*100)+'"></div></div></div>';
+/* ── start / open ── */
+async function mtStart(id){
+  if(id){
+    const m=meetings.find(x=>String(x.id)===String(id));
+    const {error}=await sb.from('meetings').update({status:'active'}).eq('id',id);
+    if(error){toast('שגיאה');return;}
+    if(m)m.status='active';
+  }else{
+    const {data,error}=await sb.from('meetings').insert({family_id:profile.family_id,status:'active',created_by:profile.name||''}).select();
+    if(error){toast('שגיאה ביצירת מפגש');return;}
+    if(data&&data[0])meetings.unshift(data[0]);
+  }
+  openMeet();
+}
+async function mtCancel(){
+  const m=mtActiveM();if(!m)return;
+  const {error}=await sb.from('meetings').delete().eq('id',m.id);
+  if(error){toast('שגיאה');return;}
+  meetings=meetings.filter(x=>x.id!==m.id);
+  renderMeetTab();
+}
+function openMeet(){
+  curMeet=mtActiveM();
+  if(!curMeet){toast('אין מפגש פעיל');return;}
+  mtOpen={};mtManual={};mtBudMonth=1;mtStage='live';
+  C('ov-meet').classList.add('on');
+  mtRender();
+}
+function closeMeet(){
+  C('ov-meet').classList.remove('on');
+  curMeet=null;
+  renderMeetTab();
+}
+
+/* ── section completion ── */
+function mtAutoOf(k){
+  if(!curMeet)return false;
+  if(k==='mood')return mMoods.some(x=>x.meeting_id===curMeet.id&&x.user_id===user.id);
+  if(k==='dec'){
+    const act=mtActiveDecs().filter(d=>d.meeting_id!==curMeet.id);
+    const rev=mReviews.filter(x=>x.meeting_id===curMeet.id);
+    return (act.length>0&&rev.length>=act.length)||mDecs.some(d=>d.meeting_id===curMeet.id);
+  }
+  if(k==='sav')return mSavings.some(x=>x.meeting_id===curMeet.id);
+  return mBudChg.some(x=>x.meeting_id===curMeet.id);
+}
+function mtIsDone(k){
+  if(mtManual[k]===true)return true;
+  if(mtManual[k]===false)return false;
+  return mtAutoOf(k);
+}
+function mtTog(k){mtOpen[k]=!mtOpen[k];mtRender();}
+function mtTogMark(k,ev){if(ev)ev.stopPropagation();mtManual[k]=!mtIsDone(k);mtRender();}
+
+/* ── section bodies ── */
+function mtMoodBody(){
+  const mine=mMoods.find(x=>x.meeting_id===curMeet.id&&x.user_id===user.id);
+  const other=mMoods.find(x=>x.meeting_id===curMeet.id&&x.user_id!==user.id);
+  let h='<div class="mt-mrow"><div class="mt-mwho">'+esc(profile.name||'אני')+'</div><div class="mt-mopts">';
+  MT_MOODS.forEach(m=>{
+    h+='<button class="mt-mo'+(mine&&mine.mood===m.e?' sel':'')+'" onclick="mtSetMood(\''+m.e+'\')">'+
+       '<div class="e">'+m.e+'</div><div class="l">'+m.l+'</div></button>';
+  });
+  h+='</div></div>';
+  if(mine){
+    if(other){
+      h+='<div class="mt-mrow"><div class="mt-mwho">'+esc(other.user_name||'השני')+'</div><div class="mt-mopts">';
+      MT_MOODS.forEach(m=>{
+        h+='<div class="mt-mo'+(other.mood===m.e?' sel':'')+'"><div class="e">'+m.e+'</div><div class="l">'+m.l+'</div></div>';
       });
-      body='<div class="dt-kick">לאן הלך הכסף</div><div class="dt-big" style="font-size:1.15rem">הקטגוריות הגדולות</div><div class="dt-bars">'+bars+'</div>';
-      setTimeout(()=>{document.querySelectorAll('#dt-screen .dt-bf').forEach(f=>{f.style.width=f.getAttribute('data-w')+'%';});},120);
-    }
-  }else if(dtStage===3){
-    const g=goals&&goals.length?goals[0]:null;
-    if(!g){body='<div class="dt-kick">היעדים שלכם</div><div style="font-size:2.4rem">🎯</div>'+
-      '<div class="dt-big" style="font-size:1.15rem">עוד לא הגדרתם יעד</div>'+
-      '<div class="dt-stx">יעד משותף הופך חיסכון<br>למשהו שכיף לעקוב אחריו</div>';}
-    else{
-      const pct=g.target>0?Math.min(100,Math.round(g.saved/g.target*100)):0;
-      const off=Math.round(383-(383*pct/100));
-      body='<div class="dt-kick">היעד שלכם</div><div class="dt-big" style="font-size:1.15rem">'+esc(g.name)+'</div>'+
-        '<div class="dt-ring"><svg width="130" height="130" viewBox="0 0 130 130">'+
-        '<defs><linearGradient id="dtg" x1="0" y1="0" x2="1" y2="1">'+
-        '<stop offset="0%" stop-color="var(--acc)"/><stop offset="100%" stop-color="var(--acc2)"/></linearGradient></defs>'+
-        '<circle cx="65" cy="65" r="61" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="9"/>'+
-        '<circle id="dt-ring-fg" cx="65" cy="65" r="61" fill="none" stroke="url(#dtg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="383" stroke-dashoffset="383" style="transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)"/>'+
-        '</svg><div class="dt-rt"><b>'+pct+'%</b><span>₪'+fmt(Math.round(g.saved))+' / ₪'+fmt(Math.round(g.target))+'</span></div></div>'+
-        (pct<100?'<div class="dt-stx">עוד ₪'+fmt(Math.round(g.target-g.saved))+' ואתם שם ✨</div>':'<div class="dt-stx">הגעתם ליעד! 🎉</div>');
-      setTimeout(()=>{const r=C('dt-ring-fg');if(r)r.style.strokeDashoffset=off;},120);
+      h+='</div></div>';
+    }else{
+      h+='<div class="mt-lock">⏳ ממתין שגם הצד השני יבחר</div>';
     }
   }else{
-    const exp=cur.filter(t=>t.type==='expense').sort((a,b)=>parseFloat(b.amount||0)-parseFloat(a.amount||0));
-    if(!exp.length){body='<div class="dt-kick">שיא התקופה</div><div class="dt-big" style="font-size:1.2rem">תקופה בלי הוצאות 👏</div>';}
-    else{
-      const t=exp[0];const all=getAllCats();
-      const ic=(all[t.category]&&all[t.category].i)||'📌';
-      body='<div class="dt-kick">שיא התקופה</div><div style="font-size:2.6rem">'+ic+'</div>'+
-        '<div class="dt-big" style="font-size:1.1rem">ההוצאה הגדולה ביותר</div>'+
-        '<div class="dt-huge" style="font-size:2.2rem">₪'+fmt(Math.round(parseFloat(t.amount||0)))+'</div>'+
-        '<div class="dt-stx">'+esc(t.note||t.category||'')+'</div>';
-    }
+    h+='<div class="mt-lock">🔒 הבחירה של השני תיחשף אחרי שתבחר</div>';
   }
-  sc.innerHTML='<div class="dt-prog">'+pb+'</div><button class="dt-x" onclick="closeDate()">✕</button>'+
-    '<div class="dt-body" onclick="dtNext()">'+body+'</div><div class="dt-hint">הקש כדי להמשיך</div>';
-  dtStoryTimer=setTimeout(dtNext,7000);
+  return h;
 }
-function dtCount(id,target,dur){
-  const el=C(id);if(!el)return;let t0=null;
-  function step(ts){
-    if(!t0)t0=ts;
-    const p=Math.min((ts-t0)/dur,1),e=1-Math.pow(1-p,3);
-    if(!C(id))return;
-    C(id).textContent='₪'+fmt(Math.round(target*e));
-    if(p<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
-function dtQuestionView(sc){
-  const mine=dateAnswers.find(a=>a.user_id===user.id);
-  const others=dateAnswers.filter(a=>a.user_id!==user.id);
-  let chat='';
-  if(mine)chat+='<div class="dt-bub me"><span class="dt-who">'+esc(profile.name||'אני')+'</span>'+esc(mine.answer)+'</div>';
-  others.forEach(o=>{chat+='<div class="dt-bub you"><span class="dt-who">'+esc(o.user_name||'בן/בת הזוג')+'</span>'+esc(o.answer)+'</div>';});
-  if(mine&&!others.length)chat+='<div class="dt-wait"><span>ממתין לתשובה השנייה</span><span class="dt-dots"><i></i><i></i><i></i></span></div>';
-  if(!chat)chat='<div class="dt-wait"><span>עדיין אין תשובות בתקופה הזו</span></div>';
-  const input=mine?'':'<div class="dt-row"><input class="dt-inp" id="dt-ans" placeholder="התשובה שלך..." maxlength="200"><button class="dt-send" onclick="dtSaveAnswer()">שלח</button></div>';
-  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button><div class="dt-pad">'+
-    '<div class="dt-qh"><div class="dt-kick">💬 שאלת המפגש</div><div class="dt-qt">'+esc(dtQuestion())+'</div></div>'+
-    '<div class="dt-chat">'+chat+'</div>'+input+
-    '<button class="dt-next" style="margin-top:auto" onclick="dtStage=6;dtRender()">להחלטה המשותפת ←</button></div>';
-  const inp=C('dt-ans');
-  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')dtSaveAnswer();});
-}
-async function dtSaveAnswer(){
-  const inp=C('dt-ans');if(!inp)return;
-  const v=inp.value.trim();if(!v)return;
-  inp.disabled=true;
-  const row={family_id:profile.family_id,period:dtKey(0),user_id:user.id,user_name:profile.name||'',answer:v};
-  const {error}=await sb.from('date_answers').upsert(row,{onConflict:'family_id,period,user_id'});
-  if(error){toast('שגיאה בשמירת התשובה');inp.disabled=false;return;}
-  dateAnswers=dateAnswers.filter(a=>a.user_id!==user.id).concat([row]);
-  dateAnswersAll=dateAnswersAll.filter(a=>!(a.user_id===user.id&&a.period===row.period)).concat([row]);
-  dtRender();
-}
-
-function dtDecisionView(sc){
-  const k=dtKey(0);
-  let list='';
-  dateDecisions.slice(0,6).forEach(d=>{
-    const isNow=d.period===k;
-    list+='<div class="dt-dec'+(isNow?'':' old')+'"><div class="dt-chk">✓</div>'+esc(d.txt)+
-      '<span class="dt-dd">'+(isNow?'עכשיו':esc(String(d.period||'')))+'</span></div>';
+function mtDecBody(){
+  const older=mtActiveDecs().filter(d=>d.meeting_id!==curMeet.id);
+  let h='<div class="mt-sub">מהפעם הקודמת — עמדנו?</div>';
+  if(!older.length)h+='<div class="mt-empty">אין החלטות קודמות לבדוק</div>';
+  older.slice(0,8).forEach(d=>{
+    const r=mReviews.find(x=>x.meeting_id===curMeet.id&&String(x.decision_id)===String(d.id));
+    h+='<div class="mt-it"><div class="mt-ix">'+esc(d.txt)+'</div><div class="mt-yn">'+
+       '<button class="mt-yb y'+(r&&r.kept?' on':'')+'" onclick="mtReview(\''+d.id+'\',true)">עמדנו</button>'+
+       '<button class="mt-yb n'+(r&&r.kept===false?' on':'')+'" onclick="mtReview(\''+d.id+'\',false)">לא</button>'+
+       '</div></div>';
   });
-  if(!list)list='<div class="dt-wait">עוד לא קבעתם החלטות משותפות</div>';
-  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button><div class="dt-pad">'+
-    '<div class="dt-qh"><div class="dt-kick">✅ החלטה משותפת</div><div class="dt-qt">מה מחליטים לתקופה הזו?</div></div>'+
-    '<div id="dt-dec-list">'+list+'</div>'+
-    '<div class="dt-row" style="margin-top:.6rem"><input class="dt-inp" id="dt-dec" placeholder="החלטה חדשה..." maxlength="120"><button class="dt-send" onclick="dtAddDecision()">הוסף</button></div>'+
-    '<button class="dt-next" style="margin-top:auto" onclick="dtFinish()">סיימנו את המפגש 🎉</button>'+
-    '<button class="dt-ghost" onclick="dtFinish()">דלג הפעם</button></div>';
-  const inp=C('dt-dec');
-  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')dtAddDecision();});
+  const rev=mReviews.filter(x=>x.meeting_id===curMeet.id);
+  if(older.length&&rev.length>=older.length){
+    h+='<div class="mt-score">עמדתם ב-'+rev.filter(x=>x.kept).length+' מתוך '+older.length+' 💪</div>';
+  }
+  h+='<div class="mt-sub">החלטות חדשות</div>';
+  const mine=mDecs.filter(d=>d.meeting_id===curMeet.id);
+  mine.forEach(d=>{
+    h+='<div class="mt-it"><div class="mt-nchk">✓</div><div class="mt-ix">'+esc(d.txt)+'</div><span class="mt-ntag">חדש</span></div>';
+  });
+  if(!mine.length)h+='<div class="mt-empty">מה מחליטים עד המפגש הבא?</div>';
+  h+='<div class="mt-inrow"><input class="mt-inp" id="mt-decin" placeholder="החלטה חדשה..." maxlength="90">'+
+     '<button class="mt-add" onclick="mtAddDec()">הוסף</button></div>';
+  return h;
 }
-async function dtAddDecision(){
-  const inp=C('dt-dec');if(!inp)return;
-  const v=inp.value.trim();if(!v)return;
-  inp.value='';
-  const row={family_id:profile.family_id,period:dtKey(0),txt:v,created_by:profile.name||''};
-  const {data,error}=await sb.from('date_decisions').insert(row).select();
-  if(error){toast('שגיאה בשמירת ההחלטה');return;}
-  dateDecisions=((data&&data[0])?[data[0]]:[row]).concat(dateDecisions);
-  renderDateTab();
-  dtRender();
+function mtSavBody(){
+  let h='';
+  if(!goals.length)return '<div class="mt-empty">הגדירו יעד חיסכון כדי להפריש אליו</div>';
+  goals.forEach(g=>{
+    const t=parseFloat(g.target||0),s=parseFloat(g.saved||0);
+    const p=t>0?Math.min(100,Math.round(s/t*100)):0;
+    const add=mSavings.filter(x=>x.meeting_id===curMeet.id&&String(x.goal_id)===String(g.id))
+      .reduce((a,x)=>a+parseFloat(x.amount||0),0);
+    h+='<div class="mt-svrow"><div class="mt-svtop"><b>'+esc(g.name)+'</b>'+
+       '<span>₪'+fmt(Math.round(s))+' / ₪'+fmt(Math.round(t))+'</span></div>'+
+       '<div class="mt-svtr"><div class="mt-svfl" style="width:'+p+'%"></div></div>'+
+       (add>0?'<div class="mt-svadd">+₪'+fmt(Math.round(add))+' במפגש הזה</div>':'')+'</div>';
+  });
+  h+='<div class="mt-inrow"><select class="mt-inp" id="mt-svg">';
+  goals.forEach(g=>{h+='<option value="'+esc(String(g.id))+'">'+esc(g.name)+'</option>';});
+  h+='</select><input class="mt-inp sm" id="mt-sva" placeholder="₪" inputmode="numeric">'+
+     '<button class="mt-add" onclick="mtAddSav()">הפרש</button></div>';
+  return h;
+}
+function mtBudBody(){
+  let h='<div class="mt-mpick">';
+  [0,1,2].forEach(i=>{
+    h+='<button class="mt-mp'+(mtBudMonth===i?' sel':'')+'" onclick="mtSetBudMonth('+i+')">'+
+       '<b>'+mtMonthName(i)+'</b><small>'+(i===0?'נוכחי':i===1?'הבא':'הבא אחריו')+'</small></button>';
+  });
+  h+='</div><div class="mt-bnote">✎ נשמר עם תג של <b>'+mtMonthName(mtBudMonth)+
+     '</b> ומשפיע מהחודש הזה והלאה. חודשים קודמים לא זזים.</div>';
+  const mk=mtMonthKey(mtBudMonth);
+  const cats=Object.keys(DBUD);
+  cats.forEach(cat=>{
+    const curVal=buds[cat]||DBUD[cat]||0;
+    const row=budRows.find(r=>r.category===cat&&(r.month||'2000-01')===mk);
+    const val=row?parseFloat(row.amount||0):curVal;
+    h+='<div class="mt-brow"><div class="mt-bn">'+esc(cat)+
+       '<div class="mt-bcur">היום: ₪'+fmt(curVal)+'</div></div><span class="mt-ar">←</span>'+
+       '<input class="mt-bin'+(row?' chg':'')+'" value="'+val+'" inputmode="numeric" '+
+       'onchange="mtSetBud(\''+esc(cat)+'\',this.value)"></div>';
+  });
+  return h;
 }
 
-async function dtFinish(){
-  const k=dtKey(0);
-  const {error}=await sb.from('date_log').upsert({family_id:profile.family_id,period:k,user_id:user.id},{onConflict:'family_id,period,user_id'});
+/* ── actions ── */
+async function mtSetMood(e){
+  const row={family_id:profile.family_id,meeting_id:curMeet.id,user_id:user.id,user_name:profile.name||'',mood:e};
+  const {error}=await sb.from('meeting_moods').upsert(row,{onConflict:'meeting_id,user_id'});
   if(error){toast('שגיאה בשמירה');return;}
-  if(!dateLog.some(l=>l.period===k&&l.user_id===user.id))dateLog.push({family_id:profile.family_id,period:k,user_id:user.id});
-  renderDateTab();
-  dtStage=7;dtRender();
+  mMoods=mMoods.filter(x=>!(x.meeting_id===curMeet.id&&x.user_id===user.id)).concat([row]);
+  mtRender();
 }
-function dtDoneView(sc){
-  const st=dtStreak();
-  sc.innerHTML='<button class="dt-x" onclick="closeDate()">✕</button>'+
-    '<div class="dt-body" id="dt-done"><div style="font-size:3.4rem;animation:dtpop .7s cubic-bezier(.2,1.5,.4,1)">🥂</div>'+
-    '<div class="dt-big">המפגש הושלם!</div>'+
-    (st>0?'<div class="dt-tag" style="background:var(--surface);border:1px solid var(--border);color:var(--txt);font-size:.85rem;padding:.5rem 1rem">🔥 '+st+' מפגשים ברצף</div>':'')+
-    '<div class="dt-stx">נתראה '+dtNextWord()+' 💜</div>'+
-    '<button class="dt-next" style="width:auto;padding:.75rem 2rem" onclick="closeDate()">חזרה הביתה</button></div>';
-  dtConfetti();
-  renderDateCard();
+async function mtReview(did,kept){
+  const row={family_id:profile.family_id,meeting_id:curMeet.id,decision_id:did,kept:kept};
+  const {error}=await sb.from('decision_reviews').upsert(row,{onConflict:'meeting_id,decision_id'});
+  if(error){toast('שגיאה בשמירה');return;}
+  mReviews=mReviews.filter(x=>!(x.meeting_id===curMeet.id&&String(x.decision_id)===String(did))).concat([row]);
+  mtRender();
 }
-function dtConfetti(){
-  const box=C('dt-done');if(!box)return;
+async function mtAddDec(){
+  const el=C('mt-decin');if(!el)return;
+  const v=el.value.trim();if(!v)return;
+  el.value='';
+  const row={family_id:profile.family_id,meeting_id:curMeet.id,txt:v,active:true,created_by:profile.name||''};
+  const {data,error}=await sb.from('meeting_decisions').insert(row).select();
+  if(error){toast('שגיאה בשמירת ההחלטה');return;}
+  mDecs=((data&&data[0])?[data[0]]:[row]).concat(mDecs);
+  mtRender();
+}
+async function mtAddSav(){
+  const gs=C('mt-svg'),as=C('mt-sva');if(!gs||!as)return;
+  const gid=gs.value,amt=parseFloat(as.value);
+  if(!amt||amt<=0){toast('הכנס סכום');return;}
+  const g=goals.find(x=>String(x.id)===String(gid));if(!g)return;
+  as.value='';
+  const newSaved=Math.max(0,parseFloat(g.saved||0)+amt);
+  const hist=[...(g.history||[]),{date:new Date().toISOString(),amount:amt}];
+  const {error}=await sb.from('goals').update({saved:newSaved,history:hist}).eq('id',gid);
+  if(error){toast('שגיאה בעדכון היעד');return;}
+  g.saved=newSaved;g.history=hist;
+  const row={family_id:profile.family_id,meeting_id:curMeet.id,goal_id:gid,goal_name:g.name,amount:amt};
+  const {error:e2}=await sb.from('meeting_savings').insert(row);
+  if(!e2)mSavings=mSavings.concat([row]);
+  mtRender();
+}
+function mtSetBudMonth(i){mtBudMonth=i;mtRender();}
+async function mtSetBud(cat,v){
+  const amt=Math.max(0,parseFloat(v)||0);
+  const mk=mtMonthKey(mtBudMonth);
+  const oldVal=buds[cat]||DBUD[cat]||0;
+  const ex=budRows.find(r=>r.category===cat&&(r.month||'2000-01')===mk);
+  if(ex)ex.amount=amt;else budRows.push({family_id:profile.family_id,category:cat,amount:amt,month:mk});
+  const {error}=await sb.from('budgets').upsert({family_id:profile.family_id,category:cat,amount:amt,month:mk},{onConflict:'family_id,category,month'});
+  if(error){toast('שגיאה בשמירת התקציב');return;}
+  const row={family_id:profile.family_id,meeting_id:curMeet.id,category:cat,month:mk,old_amount:oldVal,new_amount:amt};
+  const {error:e2}=await sb.from('meeting_bud_changes').insert(row);
+  if(!e2)mBudChg=mBudChg.filter(x=>!(x.meeting_id===curMeet.id&&x.category===cat&&x.month===mk)).concat([row]);
+  rebuildBuds();renderBudget();
+  mtRender();
+}
+
+/* ── render meeting screen ── */
+function mtRender(){
+  const sc=C('mt-screen');if(!sc||!curMeet)return;
+  if(mtStage==='done'){mtRenderDone(sc);return;}
+  const SECS=[
+    {k:'mood',ic:'😊',n:'מצב הרוח שלנו',d:'איך אתם מרגישים עם הכסף',f:mtMoodBody},
+    {k:'dec',ic:'✅',n:'החלטות',d:'סוגרים ישנות, קובעים חדשות',f:mtDecBody},
+    {k:'sav',ic:'🏦',n:'חיסכונות',d:'מעדכן את מד ההתקדמות של היעד',f:mtSavBody},
+    {k:'bud',ic:'📊',n:'תקציב',d:'קובעים יחד, לא לבד',f:mtBudBody}
+  ];
+  let list='<div class="mt-list">';
+  SECS.forEach(s=>{
+    const dn=mtIsDone(s.k),op=mtOpen[s.k];
+    list+='<div class="mt-row'+(op?' open':'')+(dn?' done':'')+'">'+
+      '<div class="mt-rh"><div class="mt-rtap" onclick="mtTog(\''+s.k+'\')">'+
+      '<div class="mt-rico">'+s.ic+'</div><div class="mt-rname">'+s.n+'</div></div>'+
+      '<div class="mt-rmark" onclick="mtTogMark(\''+s.k+'\',event)">✓</div></div>'+
+      '<div class="mt-rb"><div class="mt-rin"><div class="mt-rdesc">'+s.d+'</div>'+s.f()+'</div></div></div>';
+  });
+  list+='</div>';
+  const n=SECS.filter(s=>mtIsDone(s.k)).length;
+  const d=new Date(curMeet.created_at||Date.now());
+  sc.innerHTML='<div class="mt-pad"><div class="mt-tbar">'+
+    '<div class="mt-tt"><div class="t1">💜 המפגש שלנו</div>'+
+    '<div class="t2">'+esc(d.getDate()+'.'+(d.getMonth()+1))+' · '+(curMeet.scheduled_at?'מפגש מתוכנן 📅':'מפגש ספונטני ⚡')+'</div></div>'+
+    '<button class="mt-x" onclick="closeMeet()">✕</button></div>'+
+    '<div><div class="mt-prog-n">הושלמו '+n+' מתוך 4</div>'+
+    '<div class="mt-prog-tr"><div class="mt-prog-fl" style="width:'+(n/4*100)+'%"></div></div></div>'+
+    list+'</div>'+
+    '<div class="mt-bbar"><button class="mt-fin" onclick="mtFinish()">סיימנו 🎉</button></div>';
+  const di=C('mt-decin');
+  if(di)di.addEventListener('keydown',e=>{if(e.key==='Enter')mtAddDec();});
+  const sa=C('mt-sva');
+  if(sa)sa.addEventListener('keydown',e=>{if(e.key==='Enter')mtAddSav();});
+}
+
+async function mtFinish(){
+  const iso=new Date().toISOString();
+  const {error}=await sb.from('meetings').update({status:'done',completed_at:iso}).eq('id',curMeet.id);
+  if(error){toast('שגיאה בשמירה');return;}
+  curMeet.status='done';curMeet.completed_at=iso;
+  mtStage='done';
+  mtRender();
+}
+function mtRenderDone(sc){
+  const id=curMeet.id;
+  const rev=mReviews.filter(x=>x.meeting_id===id);
+  const kept=rev.filter(x=>x.kept).length;
+  const nd=mDecs.filter(x=>x.meeting_id===id).length;
+  const sv=mSavings.filter(x=>x.meeting_id===id).reduce((a,x)=>a+parseFloat(x.amount||0),0);
+  const bc=mBudChg.filter(x=>x.meeting_id===id);
+  const mo=mMoods.find(x=>x.meeting_id===id&&x.user_id===user.id);
+  let lines='';
+  if(rev.length)lines+='<div class="mt-dl"><span class="di">✓</span><div class="dx">סימנתם <b>'+kept+' מתוך '+rev.length+'</b> החלטות קודמות כעומדות</div></div>';
+  if(nd)lines+='<div class="mt-dl"><span class="di">✅</span><div class="dx"><b>'+nd+' החלטות חדשות</b> — נעבור עליהן במפגש הבא</div></div>';
+  if(sv>0)lines+='<div class="mt-dl"><span class="di">🏦</span><div class="dx"><b>₪'+fmt(Math.round(sv))+'</b> נוספו למד ההתקדמות של היעדים</div></div>';
+  if(bc.length)lines+='<div class="mt-dl"><span class="di">📊</span><div class="dx"><b>'+bc.length+' קטגוריות</b> עודכנו לתקציב <b>'+esc(MHE[parseInt(bc[0].month.split('-')[1])-1])+'</b></div></div>';
+  if(mo)lines+='<div class="mt-dl"><span class="di">'+esc(mo.mood)+'</span><div class="dx">מצב הרוח נשמר בהיסטוריה</div></div>';
+  if(!lines)lines='<div class="mt-dl"><span class="di">💜</span><div class="dx">מפגש קצר בלי שינויים — גם זה נשמר</div></div>';
+  sc.innerHTML='<div class="mt-done" id="mt-donebox">'+
+    '<div class="mt-demo">🥂</div><div class="mt-dbig">המפגש הושלם!</div>'+
+    '<div class="mt-pill">💜 '+mtDoneList().length+' מפגשים</div>'+
+    '<div class="mt-dcard"><div class="mt-dst">מה נשמר עכשיו</div>'+lines+'</div>'+
+    '<div class="mt-nextq"><div class="mt-nqt">📅 לקבוע כבר את המפגש הבא?</div>'+
+    '<div class="mt-nqs">רגע טוב לסגור תאריך — בזמן שאתם יחד</div>'+
+    '<div class="mt-btns"><button class="mt-b gh" onclick="closeMeet()">אחר כך</button>'+
+    '<button class="mt-b" onclick="closeMeet();mtOpenPlan()">קבע מועד</button></div></div></div>';
+  mtConfetti();
+}
+function mtConfetti(){
+  const box=C('mt-donebox');if(!box)return;
   const cols=['#bf5af2','#ff6482','#ffd60a','#ffffff'];
-  for(let i=0;i<40;i++){
+  for(let i=0;i<38;i++){
     const c=document.createElement('div');
-    c.className='dt-conf';
+    c.className='mt-conf';
     c.style.right=(Math.random()*100)+'%';
     c.style.background=cols[i%cols.length];
-    c.style.animationDuration=(1.6+Math.random()*1.6)+'s';
+    c.style.animationDuration=(1.7+Math.random()*1.5)+'s';
     c.style.animationDelay=(Math.random()*0.6)+'s';
     box.appendChild(c);
     setTimeout(()=>c.remove(),3600);
   }
 }
 
-function syncDateFreqBtns(){
-  const w=C('dtf-weekly'),m=C('dtf-monthly');if(!w||!m)return;
-  const on='linear-gradient(135deg,var(--acc),var(--acc2))';
-  w.style.background=dateFreq==='weekly'?on:'var(--surface)';
-  w.style.color=dateFreq==='weekly'?'#fff':'var(--txt2)';
-  w.style.borderColor=dateFreq==='weekly'?'transparent':'var(--border)';
-  m.style.background=dateFreq==='monthly'?on:'var(--surface)';
-  m.style.color=dateFreq==='monthly'?'#fff':'var(--txt2)';
-  m.style.borderColor=dateFreq==='monthly'?'transparent':'var(--border)';
-}
-async function setDateFreq(f){
-  if(!profile||!profile.family_id)return;
-  dateFreq=f;syncDateFreqBtns();
-  const {error}=await sb.from('family_settings').upsert({family_id:profile.family_id,date_freq:f,updated_at:new Date().toISOString()},{onConflict:'family_id'});
-  if(error){toast('שגיאה בשמירת התדירות');return;}
-  await loadDateData();
+/* ── past meeting detail ── */
+function mtDetail(id){
+  const m=meetings.find(x=>String(x.id)===String(id));if(!m)return;
+  const d=new Date(m.completed_at||m.created_at);
+  const mo=mMoods.filter(x=>x.meeting_id===id);
+  const rev=mReviews.filter(x=>x.meeting_id===id);
+  const nd=mDecs.filter(x=>x.meeting_id===id);
+  const sv=mSavings.filter(x=>x.meeting_id===id);
+  const bc=mBudChg.filter(x=>x.meeting_id===id);
+  let h='<div class="mt-pad nobar"><div class="mt-tbar">'+
+    '<button class="mt-x" onclick="closeMeet()">✕</button>'+
+    '<div class="mt-tt"><div class="t1">מפגש · '+d.getDate()+' ב'+MHE[d.getMonth()]+'</div>'+
+    '<div class="t2">'+mtPad(d.getHours())+':'+mtPad(d.getMinutes())+'</div></div></div>';
+  if(mo.length){
+    h+='<div class="mt-dsec"><div class="mt-dst">😊 מצב הרוח שלנו</div><div class="mt-dmood">';
+    mo.forEach(x=>{h+='<div class="mt-dmb"><div class="e">'+esc(x.mood)+'</div><div class="w">'+esc(x.user_name||'')+'</div></div>';});
+    h+='</div></div>';
+  }
+  if(rev.length){
+    h+='<div class="mt-dsec"><div class="mt-dst">✓ ההחלטות שבדקנו <span class="mt-badge">'+
+       rev.filter(x=>x.kept).length+' מתוך '+rev.length+'</span></div>';
+    rev.forEach(r=>{
+      const dd=mDecs.find(x=>String(x.id)===String(r.decision_id));
+      h+='<div class="mt-dl"><span class="di '+(r.kept?'mt-ok':'mt-no')+'">'+(r.kept?'✓':'✗')+'</span>'+
+         '<span class="dx"'+(r.kept?'':' style="color:var(--txt2)"')+'>'+esc(dd?dd.txt:'—')+'</span></div>';
+    });
+    h+='</div>';
+  }
+  if(nd.length){
+    h+='<div class="mt-dsec"><div class="mt-dst">✅ מה החלטנו במפגש</div>';
+    nd.forEach(x=>{h+='<div class="mt-dl"><span class="di">💜</span><span class="dx">'+esc(x.txt)+'</span></div>';});
+    h+='</div>';
+  }
+  if(sv.length){
+    h+='<div class="mt-dsec"><div class="mt-dst">🏦 מה הפרשנו</div>';
+    sv.forEach(x=>{h+='<div class="mt-dl"><span class="di">🎯</span><span class="dx">'+esc(x.goal_name||'')+'</span>'+
+      '<b style="color:var(--grn)">+₪'+fmt(Math.round(parseFloat(x.amount||0)))+'</b></div>';});
+    h+='</div>';
+  }
+  if(bc.length){
+    h+='<div class="mt-dsec"><div class="mt-dst">📊 שינויי תקציב · '+esc(MHE[parseInt(bc[0].month.split('-')[1])-1])+'</div>';
+    bc.forEach(x=>{h+='<div class="mt-dl"><span class="di">📌</span><span class="dx">'+esc(x.category)+'</span>'+
+      '<span style="color:var(--txt3);font-size:.62rem">₪'+fmt(Math.round(parseFloat(x.old_amount||0)))+' ←</span>'+
+      '<b style="color:var(--grn)">₪'+fmt(Math.round(parseFloat(x.new_amount||0)))+'</b></div>';});
+    h+='</div>';
+  }
+  if(!mo.length&&!rev.length&&!nd.length&&!sv.length&&!bc.length){
+    h+='<div class="mt-dsec"><div class="mt-dl"><span class="di">💜</span><span class="dx">מפגש קצר בלי שינויים</span></div></div>';
+  }
+  h+='</div>';
+  curMeet=m;mtStage='detail';
+  C('mt-screen').innerHTML=h;
+  C('ov-meet').classList.add('on');
 }
 
 // ════ BUDGET ════
@@ -4037,7 +4311,7 @@ function renderGoals(){
 function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
   renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
-  renderInvPortfolio();renderBudget();renderHomeTxs();renderDateTab();
+  renderInvPortfolio();renderBudget();renderHomeTxs();renderMeetTab();
   renderStats();renderHistory();renderGoals();
   if(C('v-invest')&&C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
@@ -4313,7 +4587,7 @@ function goTab(name){
   else if(name==='invest')renderInvestTab();
   else if(name==='history')renderHistory();
   else if(name==='goals')renderGoals();
-  else if(name==='date')renderDateTab();
+  else if(name==='date')renderMeetTab();
   else render();
 }
 
