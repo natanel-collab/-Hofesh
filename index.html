@@ -2973,11 +2973,11 @@ function mtPlanned(){return meetings.find(m=>m.status==='planned');}
 function mtActiveM(){return meetings.find(m=>m.status==='active');}
 function mtDoneList(){return meetings.filter(m=>m.status==='done');}
 function mtActiveDecs(){return mDecs.filter(d=>d.active!==false);}
-function mtDaysSince(){
+function mtLastDate(){
   const done=mtDoneList();
   if(!done.length)return null;
   const last=done.map(m=>new Date(m.completed_at||m.created_at)).sort((a,b)=>b-a)[0];
-  return Math.floor((Date.now()-last.getTime())/86400000);
+  return last.getDate()+'.'+(last.getMonth()+1);
 }
 
 async function loadMeetData(){
@@ -3030,11 +3030,11 @@ function renderMeetTab(){
   }
   const st=C('mt-stats');
   if(st){
-    const ds=mtDaysSince();
+    const ld=mtLastDate();
     st.innerHTML='<div class="mt-srow">'+
       '<div class="mt-sbox"><div class="mt-sv">💜 '+mtDoneList().length+'</div><div class="mt-sl">מפגשים</div></div>'+
       '<div class="mt-sbox"><div class="mt-sv">'+mtActiveDecs().length+'</div><div class="mt-sl">החלטות פעילות</div></div>'+
-      '<div class="mt-sbox"><div class="mt-sv">'+(ds===null?'—':ds)+'</div><div class="mt-sl">ימים מהאחרון</div></div></div>';
+      '<div class="mt-sbox"><div class="mt-sv" style="font-size:.85rem">'+(ld||'—')+'</div><div class="mt-sl">המפגש האחרון</div></div></div>';
   }
   const dl=C('mt-decs');
   if(dl){
@@ -3123,7 +3123,7 @@ async function mtSavePlan(){
   }else{
     const {data,error}=await sb.from('meetings').insert({family_id:profile.family_id,scheduled_at:iso,status:'planned',created_by:profile.name||''}).select();
     if(error){toast('שגיאה בשמירה');return;}
-    if(data&&data[0])meetings.unshift(data[0]);
+    if(data&&data.id)meetings.unshift(data);else await loadMeetData();
   }
   C('ov-mtplan').classList.remove('on');
   toast('המפגש נקבע 📅');
@@ -3140,7 +3140,7 @@ async function mtStart(id){
   }else{
     const {data,error}=await sb.from('meetings').insert({family_id:profile.family_id,status:'active',created_by:profile.name||''}).select();
     if(error){toast('שגיאה ביצירת מפגש');return;}
-    if(data&&data[0])meetings.unshift(data[0]);
+    if(data&&data.id)meetings.unshift(data);else await loadMeetData();
   }
   openMeet();
 }
@@ -3297,7 +3297,7 @@ async function mtAddDec(){
   const row={family_id:profile.family_id,meeting_id:curMeet.id,txt:v,active:true,created_by:profile.name||''};
   const {data,error}=await sb.from('meeting_decisions').insert(row).select();
   if(error){toast('שגיאה בשמירת ההחלטה');return;}
-  mDecs=((data&&data[0])?[data[0]]:[row]).concat(mDecs);
+  if(data&&data.id)mDecs=[data].concat(mDecs);else await loadMeetData();
   mtRender();
 }
 async function mtAddSav(){
