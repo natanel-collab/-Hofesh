@@ -614,6 +614,12 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .mt-h2{font-size:.6rem;color:var(--txt2);margin-top:.05rem}
 .mt-hmo{font-size:.85rem;flex-shrink:0}
 .mt-hgo{font-size:.7rem;color:var(--txt3);flex-shrink:0}
+.mt-dbody{flex:1;min-width:0}
+.mt-dmeta{display:flex;align-items:center;gap:.3rem;margin-top:.2rem;font-size:.52rem;color:var(--txt3)}
+.mt-pill{font-size:.52rem;font-weight:700;padding:.1rem .4rem;border-radius:20px;flex-shrink:0;
+  display:inline-block;white-space:nowrap}
+.mt-pill.me{background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b)}
+.mt-pill.you{background:rgba(10,132,255,0.18);color:#6bb6ff;border:1px solid rgba(10,132,255,0.32)}
 .mt-dechint{font-size:.55rem;color:var(--txt3);text-align:center;padding-top:.5rem;line-height:1.6}
 .mt-del{background:none;border:none;font-size:.75rem;color:var(--txt3);cursor:pointer;
   font-family:inherit;padding:.2rem .3rem;flex-shrink:0;opacity:.55}
@@ -1897,6 +1903,7 @@ let txReactions={};
 let budRows=[];
 let meetings=[], mDecs=[], mReviews=[], mMoods=[], mSavings=[], mBudChg=[];
 let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live', _mtDelId=null, _mtDelDecId=null;
+let mtSyncTimer=null;
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -2541,6 +2548,7 @@ async function loadUserData(){
   // subscribe to realtime
   subscribeRealtime();
   loadMeetData();
+  mtStartSync();
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
@@ -2707,6 +2715,13 @@ function subscribeRealtime(){
         const {data}=await sb.from('bank_accounts').select('*').eq('family_id',profile.family_id);
         bankAccounts=(data||[]).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
         render();
+      })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'meetings',filter:`family_id=eq.${profile.family_id}`},
+      async()=>{
+        const {data}=await sb.from('meetings').select('*').eq('family_id',profile.family_id).order('created_at',{ascending:false});
+        meetings=data||[];
+        renderMeetTab();
       })
     .subscribe(status=>{
       console.log('Realtime status:',status);
@@ -3025,7 +3040,7 @@ function mtLastDate(){
   return last.getDate()+'.'+(last.getMonth()+1);
 }
 
-async function loadMeetData(){
+async function loadMeetData(silent){
   if(!profile||!profile.family_id)return;
   try{
     const [a,b,c,d,e,f]=await Promise.all([
@@ -3039,7 +3054,56 @@ async function loadMeetData(){
     meetings=a.data||[];mDecs=b.data||[];mReviews=c.data||[];
     mMoods=d.data||[];mSavings=e.data||[];mBudChg=f.data||[];
   }catch(err){}
-  renderMeetTab();
+  if(!silent)renderMeetTab();
+  else renderMeetTab();
+}
+
+function mtSyncActive(){
+  const ovOpen=C('ov-meet')&&C('ov-meet').classList.contains('on');
+  const tabOpen=C('v-date')&&C('v-date').classList.contains('on');
+  return !!(ovOpen||tabOpen);
+}
+
+function mtSnapshot(){
+  return JSON.stringify([
+    meetings.map(m=>m.id+':'+m.status),
+    mDecs.map(d=>d.id+':'+(d.active!==false?1:0)),
+    mReviews.map(r=>r.decision_id+':'+(r.kept?1:0)),
+    mMoods.map(m=>m.user_id+':'+m.mood),
+    mSavings.map(s=>s.id||(s.goal_id+':'+s.amount)),
+    mBudChg.map(b=>b.category+':'+b.new_amount)
+  ]);
+}
+
+async function mtPollOnce(){
+  if(!profile||!profile.family_id)return;
+  if(document.hidden)return;
+  if(!mtSyncActive())return;
+  const before=mtSnapshot();
+  const prevDecIds=mDecs.map(d=>String(d.id));
+  const prevMoodUsers=mMoods.filter(m=>curMeet&&m.meeting_id===curMeet.id).map(m=>m.user_id);
+  await loadMeetData(true);
+  if(mtSnapshot()===before)return;
+
+  // what changed, by the other person?
+  const newDecs=mDecs.filter(d=>prevDecIds.indexOf(String(d.id))<0);
+  const otherDec=newDecs.find(d=>d.created_by&&d.created_by!==(profile.name||''));
+  if(otherDec)toast(esc(otherDec.created_by)+' \u05d4\u05d5\u05e1\u05d9\u05e4\u05d4 \u05d4\u05d7\u05dc\u05d8\u05d4 \u2705');
+  else if(curMeet){
+    const newMood=mMoods.find(m=>m.meeting_id===curMeet.id&&m.user_id!==user.id&&prevMoodUsers.indexOf(m.user_id)<0);
+    if(newMood)toast(esc(newMood.user_name||'\u05d1\u05df/\u05d1\u05ea \u05d4\u05d6\u05d5\u05d2')+' \u05d1\u05d7\u05e8\u05d4 \u05de\u05e6\u05d1 \u05e8\u05d5\u05d7 \uD83D\uDE0A');
+  }
+
+  if(curMeet){
+    const fresh=meetings.find(m=>String(m.id)===String(curMeet.id));
+    if(fresh)curMeet=fresh;
+  }
+  if(C('ov-meet')&&C('ov-meet').classList.contains('on')&&mtStage==='live')mtRender();
+}
+
+function mtStartSync(){
+  clearInterval(mtSyncTimer);
+  mtSyncTimer=setInterval(mtPollOnce,7000);
 }
 
 function renderMeetTab(){
@@ -3085,9 +3149,15 @@ function renderMeetTab(){
   if(dl){
     let h='';
     mDecs.slice(0,20).forEach(d=>{
+      const who=d.created_by||'';
+      const mine=who&&who===(profile.name||'');
+      const dt=d.created_at?(new Date(d.created_at).getDate()+'.'+(new Date(d.created_at).getMonth()+1)):'';
+      const meta=(who||dt)?('<div class="mt-dmeta">'+
+        (who?'<span class="mt-pill '+(mine?'me':'you')+'">'+esc(who)+'</span>':'')+
+        (dt?'<span>'+dt+'</span>':'')+'</div>'):'';
       h+='<div class="mt-dec-it'+(d.active===false?' off':'')+'">'+
          '<div class="mt-dchk" onclick="mtToggleDec(\''+d.id+'\')">✓</div>'+
-         '<div class="mt-dx">'+esc(d.txt)+'</div>'+
+         '<div class="mt-dbody"><div class="mt-dx">'+esc(d.txt)+'</div>'+meta+'</div>'+
          '<button class="mt-del" onclick="mtAskDelDec(\''+d.id+'\')">🗑</button></div>';
     });
     dl.innerHTML=(h?h+'<div class="mt-dechint">✓ השבתה · 🗑 מחיקה מוחלטת</div>':'')||'<div class="mt-empty">עוד לא קבעתם החלטות משותפות</div>';
@@ -3256,6 +3326,7 @@ function openMeet(){
   mtOpen={};mtManual={};mtBudMonth=1;mtStage='live';
   C('ov-meet').classList.add('on');
   mtRender();
+  loadMeetData(true);
 }
 function closeMeet(){
   C('ov-meet').classList.remove('on');
@@ -3314,7 +3385,11 @@ function mtDecBody(){
   if(!older.length)h+='<div class="mt-empty">אין החלטות קודמות לבדוק</div>';
   older.slice(0,8).forEach(d=>{
     const r=mReviews.find(x=>x.meeting_id===curMeet.id&&String(x.decision_id)===String(d.id));
-    h+='<div class="mt-it"><div class="mt-ix">'+esc(d.txt)+'</div><div class="mt-yn">'+
+    const rw=d.created_by||'';
+    const rMe=rw&&rw===(profile.name||'');
+    h+='<div class="mt-it"><div class="mt-ix">'+esc(d.txt)+
+       (rw?'<span class="mt-pill '+(rMe?'me':'you')+'" style="margin-right:.3rem">'+esc(rw)+'</span>':'')+
+       '</div><div class="mt-yn">'+
        '<button class="mt-yb y'+(r&&r.kept?' on':'')+'" onclick="mtReview(\''+d.id+'\',true)">עמדנו</button>'+
        '<button class="mt-yb n'+(r&&r.kept===false?' on':'')+'" onclick="mtReview(\''+d.id+'\',false)">לא</button>'+
        '</div></div>';
@@ -3326,7 +3401,11 @@ function mtDecBody(){
   h+='<div class="mt-sub">החלטות חדשות</div>';
   const mine=mDecs.filter(d=>d.meeting_id===curMeet.id);
   mine.forEach(d=>{
-    h+='<div class="mt-it"><div class="mt-nchk">✓</div><div class="mt-ix">'+esc(d.txt)+'</div><span class="mt-ntag">חדש</span></div>';
+    const w=d.created_by||'';
+    const isMe=w&&w===(profile.name||'');
+    h+='<div class="mt-it"><div class="mt-nchk">✓</div><div class="mt-ix">'+esc(d.txt)+
+       (w?'<span class="mt-pill '+(isMe?'me':'you')+'" style="margin-right:.3rem">'+esc(w)+'</span>':'')+
+       '</div></div>';
   });
   if(!mine.length)h+='<div class="mt-empty">מה מחליטים עד המפגש הבא?</div>';
   h+='<div class="mt-inrow"><input class="mt-inp" id="mt-decin" placeholder="החלטה חדשה..." maxlength="90">'+
@@ -3435,6 +3514,13 @@ async function mtSetBud(cat,v){
 function mtRender(){
   const sc=C('mt-screen');if(!sc||!curMeet)return;
   if(mtStage==='done'){mtRenderDone(sc);return;}
+  // preserve whatever is being typed
+  const ae=document.activeElement;
+  let keepId=null,keepVal=null,keepPos=null;
+  if(ae&&ae.id&&sc.contains(ae)&&(ae.tagName==='INPUT'||ae.tagName==='SELECT')){
+    keepId=ae.id;keepVal=ae.value;
+    try{keepPos=ae.selectionStart;}catch(e){}
+  }
   const SECS=[
     {k:'mood',ic:'😊',n:'מצב הרוח שלנו',d:'איך אתם מרגישים עם הכסף',f:mtMoodBody},
     {k:'dec',ic:'✅',n:'החלטות',d:'סוגרים ישנות, קובעים חדשות',f:mtDecBody},
@@ -3465,6 +3551,14 @@ function mtRender(){
   if(di)di.addEventListener('keydown',e=>{if(e.key==='Enter')mtAddDec();});
   const sa=C('mt-sva');
   if(sa)sa.addEventListener('keydown',e=>{if(e.key==='Enter')mtAddSav();});
+  // restore what was being typed
+  if(keepId){
+    const el=C(keepId);
+    if(el){
+      el.value=keepVal;
+      try{el.focus();if(keepPos!=null&&el.setSelectionRange)el.setSelectionRange(keepPos,keepPos);}catch(e){}
+    }
+  }
 }
 
 async function mtFinish(){
@@ -3551,7 +3645,13 @@ function mtDetail(id){
   }
   if(nd.length){
     h+='<div class="mt-dsec"><div class="mt-dst">✅ מה החלטנו במפגש</div>';
-    nd.forEach(x=>{h+='<div class="mt-dl"><span class="di">💜</span><span class="dx">'+esc(x.txt)+'</span></div>';});
+    nd.forEach(x=>{
+      const w=x.created_by||'';
+      const isMe=w&&w===(profile.name||'');
+      h+='<div class="mt-dl"><span class="di">💜</span><span class="dx">'+esc(x.txt)+
+         (w?'<span class="mt-pill '+(isMe?'me':'you')+'" style="margin-right:.3rem">'+esc(w)+'</span>':'')+
+         '</span></div>';
+    });
     h+='</div>';
   }
   if(sv.length){
@@ -4766,7 +4866,7 @@ function goTab(name){
   else if(name==='invest')renderInvestTab();
   else if(name==='history')renderHistory();
   else if(name==='goals')renderGoals();
-  else if(name==='date')renderMeetTab();
+  else if(name==='date'){renderMeetTab();loadMeetData(true);}
   else render();
 }
 
