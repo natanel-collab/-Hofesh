@@ -52,10 +52,11 @@
   transition:opacity .25s}
 .wrapped-ov.on{opacity:1;pointer-events:all}
 .wrapped-bars{position:absolute;top:calc(env(safe-area-inset-top,0px) + .6rem);left:.75rem;right:.75rem;
-  display:flex;gap:.3rem;z-index:5}
-.wrapped-bar{flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:2px;overflow:hidden}
-.wrapped-bar-fill{height:100%;width:0%;background:#fff;border-radius:2px;transition:width .15s linear}
-.wrapped-bar.done .wrapped-bar-fill{width:100%;transition:none}
+  display:flex;gap:.3rem;z-index:8;direction:rtl}
+.wrapped-bar{flex:1;height:3px;background:rgba(255,255,255,0.25);border-radius:2px;overflow:hidden;cursor:pointer}
+.wrapped-bar-fill{height:100%;width:100%;background:#fff;border-radius:2px;
+  transform:scaleX(0);transform-origin:right center}
+.wrapped-bar.done .wrapped-bar-fill{transform:scaleX(1);transition:none}
 .wrapped-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 1rem);left:1rem;z-index:5;
   width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);
   display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;cursor:pointer;
@@ -63,29 +64,45 @@
 .wrapped-track{display:flex;height:100%;transition:transform .35s cubic-bezier(.32,.72,0,1);will-change:transform}
 .wrapped-slide{flex:0 0 100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:2rem 1.5rem;text-align:center;position:relative;overflow:hidden}
-.wrapped-tap-zone{position:absolute;top:0;bottom:0;width:35%;z-index:4}
+.wrapped-tap-zone{position:absolute;top:70px;bottom:88px;width:34%;z-index:4}
 .wrapped-tap-l{left:0}
 .wrapped-tap-r{right:0}
-.wrapped-emoji{font-size:3.5rem;margin-bottom:1rem;animation:wrapPop .5s cubic-bezier(.34,1.56,.64,1)}
+.wrapped-emoji{font-size:2.4rem;margin-bottom:1.4rem;opacity:.9;animation:wrapPop .5s cubic-bezier(.34,1.56,.64,1)}
 @keyframes wrapPop{0%{transform:scale(0) rotate(-15deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
-.wrapped-num{font-size:5rem;font-weight:900;line-height:1;margin-bottom:.5rem;
-  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .1s both}
-.wrapped-title{font-size:1.6rem;font-weight:800;line-height:1.4;margin-bottom:.75rem;
+.wrapped-num{font-size:4.2rem;font-weight:800;line-height:1;margin-bottom:.9rem;letter-spacing:-.05em;
+  background:linear-gradient(135deg,#e5b8ff,#ff9ec2);-webkit-background-clip:text;background-clip:text;
+  color:transparent;animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .1s both}
+.wrapped-title{font-size:1.15rem;font-weight:700;line-height:1.5;margin-bottom:.55rem;
+  color:rgba(255,255,255,0.95);max-width:300px;
   animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .15s both}
-.wrapped-sub{font-size:1rem;opacity:.85;line-height:1.6;margin-bottom:2rem;max-width:320px;
-  animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .2s both}
+.wrapped-sub{font-size:.82rem;opacity:.55;line-height:1.65;margin-bottom:2.2rem;max-width:280px;
+  font-weight:400;animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .2s both}
 @keyframes wrapSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.wrapped-share{background:rgba(255,255,255,0.18);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.3);
-  color:#fff;border-radius:50px;padding:.9rem 2.2rem;font-size:.95rem;font-weight:700;font-family:inherit;
+.wrapped-share{background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.18);
+  color:#fff;border-radius:50px;padding:.75rem 1.9rem;font-size:.85rem;font-weight:600;font-family:inherit;
   cursor:pointer;display:flex;align-items:center;gap:.5rem;
   animation:wrapSlideUp .5s cubic-bezier(.34,1.56,.64,1) .3s both}
 .wrapped-share:active{transform:scale(0.96)}
-.wrapped-grad-1{background:linear-gradient(160deg,#30d158 0%,#0a84ff 100%)}
-.wrapped-grad-2{background:linear-gradient(160deg,#ff9f0a 0%,#ff453a 100%)}
-.wrapped-grad-3{background:linear-gradient(160deg,#bf5af2 0%,#0a84ff 100%)}
-.wrapped-grad-4{background:linear-gradient(160deg,#0a84ff 0%,#30d158 60%,#ffd60a 100%)}
-.wrapped-logo{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 1.2rem);font-size:.75rem;
-  opacity:.6;font-weight:700;letter-spacing:.05em}
+.wrapped-grad-1{background:radial-gradient(120% 80% at 50% 0%,#3d1856 0%,#1e0b2c 55%,#120718 100%)}
+.wrapped-grad-2{background:radial-gradient(120% 80% at 50% 0%,#4a1a5e 0%,#241030 55%,#140819 100%)}
+.wrapped-grad-3{background:radial-gradient(120% 80% at 50% 0%,#35164f 0%,#1c0a29 55%,#100616 100%)}
+.wrapped-grad-4{background:radial-gradient(120% 80% at 50% 0%,#4d1a52 0%,#26102e 55%,#150818 100%)}
+.wrapped-tag{font-size:.62rem;font-weight:800;padding:.25rem .7rem;border-radius:20px;margin-bottom:1rem}
+.wrapped-tag.ok{background:rgba(48,209,88,0.15);color:#5ee37e;border:1px solid rgba(48,209,88,0.3)}
+.wrapped-tag.up{background:rgba(255,159,10,0.15);color:#ffb340;border:1px solid rgba(255,159,10,0.3)}
+.wrapped-nav{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 3.1rem);left:0;right:0;
+  display:flex;align-items:center;justify-content:center;gap:.7rem;z-index:7}
+.wrapped-arw{width:36px;height:36px;border-radius:99px;background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:.72rem;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.wrapped-arw:active{transform:scale(.88)}
+.wrapped-arw:disabled{opacity:.22;pointer-events:none}
+.wrapped-pos{font-size:.65rem;color:rgba(255,255,255,0.55);font-weight:700;min-width:90px;text-align:center}
+.wrapped-pause{position:absolute;top:calc(env(safe-area-inset-top,0px) + 1rem);right:1rem;z-index:6;
+  background:rgba(255,255,255,0.14);border:none;color:#fff;border-radius:99px;padding:.35rem .7rem;
+  font-size:.62rem;font-weight:700;cursor:pointer;font-family:inherit}
+.wrapped-logo{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 1.2rem);font-size:.62rem;
+  opacity:.32;font-weight:600;letter-spacing:.12em}
 
 
 /* Goal celebration */
@@ -597,6 +614,9 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .mt-h2{font-size:.6rem;color:var(--txt2);margin-top:.05rem}
 .mt-hmo{font-size:.85rem;flex-shrink:0}
 .mt-hgo{font-size:.7rem;color:var(--txt3);flex-shrink:0}
+.mt-del{background:none;border:none;font-size:.75rem;color:var(--txt3);cursor:pointer;
+  font-family:inherit;padding:.2rem .3rem;flex-shrink:0;opacity:.55}
+.mt-del:active{transform:scale(.85);opacity:1}
 
 .mt-dec-it{display:flex;align-items:center;gap:.5rem;font-size:.75rem;padding:.5rem 0;
   border-bottom:1px solid var(--border);color:var(--txt)}
@@ -1111,9 +1131,9 @@ select.mt-inp{appearance:none}
 
       <div class="mnav glass" style="flex-direction:column;padding:.65rem .9rem;gap:.2rem">
         <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-          <div class="marr" onclick="chgMonth(-1)">‹</div>
+          <div class="marr" onclick="chgMonth(-1)">▶</div>
           <div class="mnav-lbl" id="m-lbl">—</div>
-          <div class="marr" onclick="chgMonth(1)">›</div>
+          <div class="marr" onclick="chgMonth(1)">◀</div>
         </div>
         <div style="font-size:.65rem;color:var(--txt3);text-align:center" id="home-date"></div>
       </div>
@@ -1407,6 +1427,17 @@ select.mt-inp{appearance:none}
     <div class="mt-screen" id="mt-screen"></div>
   </div>
 
+  <div class="ov" id="ov-mtdel" onclick="if(event.target===this)C('ov-mtdel').classList.remove('on')">
+    <div class="sheet" style="text-align:center">
+      <div class="sh-handle"></div>
+      <div style="font-size:1.8rem;margin-bottom:.3rem">🗑</div>
+      <div class="sh-title">למחוק את המפגש?</div>
+      <div id="mtdel-txt" style="font-size:.75rem;color:var(--txt2);margin:.3rem 0 1rem;line-height:1.6"></div>
+      <button onclick="mtDoDelete()" style="width:100%;padding:.8rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.9rem;font-weight:800;border:none;cursor:pointer;margin-bottom:.45rem">מחק מפגש</button>
+      <button onclick="C('ov-mtdel').classList.remove('on')" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
+    </div>
+  </div>
+
   <div class="ov" id="ov-mtplan" onclick="if(event.target===this)C('ov-mtplan').classList.remove('on')">
     <div class="sheet">
       <div class="sh-handle"></div><div class="sh-title">📅 מתי ניפגש?</div>
@@ -1641,6 +1672,12 @@ select.mt-inp{appearance:none}
     <div class="wrapped-close" onclick="closeWrapped()">✕</div>
     <div class="wrapped-tap-zone wrapped-tap-l" onclick="wrappedNav(-1)"></div>
     <div class="wrapped-tap-zone wrapped-tap-r" onclick="wrappedNav(1)"></div>
+    <button class="wrapped-pause" id="wrap-pause" onclick="wrappedPause()">⏸ השהה</button>
+    <div class="wrapped-nav">
+      <button class="wrapped-arw" id="wrap-prev" onclick="wrappedNav(-1)">▶</button>
+      <span class="wrapped-pos" id="wrap-pos"></span>
+      <button class="wrapped-arw" id="wrap-next" onclick="wrappedNav(1)">◀</button>
+    </div>
     <div class="wrapped-track" id="wrapped-track"></div>
   </div>
 
@@ -1853,7 +1890,7 @@ let histView='date';
 let txReactions={};
 let budRows=[];
 let meetings=[], mDecs=[], mReviews=[], mMoods=[], mSavings=[], mBudChg=[];
-let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live';
+let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live', _mtDelId=null;
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -2501,6 +2538,7 @@ async function loadUserData(){
   updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
+  goTab('home');
   // Init swipe-down for all sheets
   ['ov-add','ov-edit','ov-ob','ov-goal','ov-gp','ov-cash','ov-profile','ov-cat'].forEach(initSheetSwipe);
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
@@ -3076,14 +3114,39 @@ function renderMeetTab(){
       const p2=[];
       if(rv.length)p2.push('עמדתם ב-'+kept+' מתוך '+rv.length);
       if(bc)p2.push('תקציב עודכן');
-      h+='<div class="mt-hrow" onclick="mtDetail(\''+m.id+'\')">'+
+      h+='<div class="mt-hrow" data-mid="'+m.id+'" onclick="mtDetail(\''+m.id+'\')">'+
          '<div class="mt-hd"><b>'+d.getDate()+'</b><small>'+MHE[d.getMonth()]+'</small></div>'+
          '<div class="mt-hm"><div class="mt-h1">'+esc(p1.length?p1.join(' · '):'מפגש קצר')+'</div>'+
          '<div class="mt-h2">'+esc(p2.length?p2.join(' · '):'בלי שינויים')+'</div></div>'+
-         '<div class="mt-hmo">'+(mine?esc(mine.mood):'')+'</div><div class="mt-hgo">‹</div></div>';
+         '<div class="mt-hmo">'+(mine?esc(mine.mood):'')+'</div>'+
+         '<button class="mt-del" onclick="event.stopPropagation();mtAskDelete(\''+m.id+'\')">🗑</button></div>';
     });
     hs.innerHTML=h||'<div class="mt-empty">כאן יופיעו המפגשים שלכם</div>';
   }
+}
+
+function mtAskDelete(id){
+  const m=meetings.find(x=>String(x.id)===String(id));if(!m)return;
+  const d=new Date(m.completed_at||m.created_at);
+  _mtDelId=id;
+  C('mtdel-txt').textContent='מפגש מ-'+d.getDate()+' ב'+MHE[d.getMonth()]+' · כל מה שנרשם בו יימחק';
+  C('ov-mtdel').classList.add('on');
+}
+async function mtDoDelete(){
+  if(!_mtDelId)return;
+  const id=_mtDelId;_mtDelId=null;
+  C('ov-mtdel').classList.remove('on');
+  const {error}=await sb.from('meetings').delete().eq('id',id);
+  if(error){toast('שגיאה במחיקה'+(error.message?': '+error.message:''));return;}
+  meetings=meetings.filter(m=>String(m.id)!==String(id));
+  mDecs=mDecs.filter(x=>String(x.meeting_id)!==String(id));
+  mReviews=mReviews.filter(x=>String(x.meeting_id)!==String(id));
+  mMoods=mMoods.filter(x=>String(x.meeting_id)!==String(id));
+  mSavings=mSavings.filter(x=>String(x.meeting_id)!==String(id));
+  mBudChg=mBudChg.filter(x=>String(x.meeting_id)!==String(id));
+  if(curMeet&&String(curMeet.id)===String(id)){curMeet=null;C('ov-meet').classList.remove('on');}
+  renderMeetTab();
+  toast('המפגש נמחק ✓');
 }
 
 async function mtToggleDec(id){
@@ -3443,7 +3506,8 @@ function mtDetail(id){
   let h='<div class="mt-pad nobar"><div class="mt-tbar">'+
     '<button class="mt-x" onclick="closeMeet()">✕</button>'+
     '<div class="mt-tt"><div class="t1">מפגש · '+d.getDate()+' ב'+MHE[d.getMonth()]+'</div>'+
-    '<div class="t2">'+mtPad(d.getHours())+':'+mtPad(d.getMinutes())+'</div></div></div>';
+    '<div class="t2">'+mtPad(d.getHours())+':'+mtPad(d.getMinutes())+'</div></div>'+
+    '<button class="mt-x" onclick="mtAskDelete(\''+id+'\')">🗑</button></div>';
   if(mo.length){
     h+='<div class="mt-dsec"><div class="mt-dst">😊 מצב הרוח שלנו</div><div class="mt-dmood">';
     mo.forEach(x=>{h+='<div class="mt-dmb"><div class="e">'+esc(x.mood)+'</div><div class="w">'+esc(x.user_name||'')+'</div></div>';});
@@ -3677,7 +3741,7 @@ async function toggleReaction(txId,emoji){
 }
 
 // ═══ WRAPPED STORIES ═══
-let _wrapIdx=0,_wrapTimer=null,_wrapSlides=[];
+let _wrapIdx=0,_wrapTimer=null,_wrapPaused=false,_wrapSlides=[];
 const WRAP_DURATION=5000;
 
 function buildWrappedSlides(){
@@ -3685,68 +3749,113 @@ function buildWrappedSlides(){
   const exp=sumT(mt,'expense'),inc=sumT(mt,'income');
   const inv=mt.filter(t=>t.type==='invest').reduce((s,t)=>s+t.amount,0);
 
-  // Top category
+  // previous month
+  const pM=cM===0?11:cM-1, pY=cM===0?cY-1:cY;
+  const pt=mTxs(pM,pY);
+  const pExp=sumT(pt,'expense');
+
+  // top category
   const catTotals={};
   mt.filter(t=>t.type==='expense').forEach(t=>{catTotals[t.category]=(catTotals[t.category]||0)+t.amount;});
   const topCat=Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
   const topCatPct=topCat&&exp>0?Math.round(topCat[1]/exp*100):0;
 
-  // Savings rate
   const savingsRate=inc>0?Math.round(((inc-exp)/inc)*100):0;
-
-  // Transaction count
-  const txCount=mt.length;
 
   const slides=[];
 
   slides.push({
-    grad:'wrapped-grad-1', emoji:'👋',
+    grad:'wrapped-grad-1', emoji:'\uD83D\uDC4B',
     num:MHE[cM],
-    title:'הסיכום החודשי שלך מוכן',
-    sub:'בוא נראה איך התנהל החודש שלך כלכלית — באחוזים בלבד 🔒'
+    title:'\u05d4\u05e1\u05d9\u05db\u05d5\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9\u05d9 \u05e9\u05dc\u05db\u05dd \u05de\u05d5\u05db\u05df',
+    sub:'\u05ea\u05d5\u05d1\u05e0\u05d5\u05ea \u05e2\u05dc \u05d4\u05d7\u05d5\u05d3\u05e9 \u2014 \u05d1\u05d0\u05d7\u05d5\u05d6\u05d9\u05dd \u05d1\u05dc\u05d1\u05d3 \uD83D\uDD12'
   });
+
+  // vs previous month
+  if(pExp>0&&exp>0){
+    const diff=Math.round((exp-pExp)/pExp*100);
+    if(Math.abs(diff)>=1){
+      const less=diff<0;
+      slides.push({
+        grad:less?'wrapped-grad-4':'wrapped-grad-2',
+        emoji:less?'\uD83D\uDCC9':'\uD83D\uDCC8',
+        num:Math.abs(diff)+'%',
+        title:less?'\u05e4\u05d7\u05d5\u05ea \u05de\u05d4\u05d7\u05d5\u05d3\u05e9 \u05e9\u05e2\u05d1\u05e8':'\u05d9\u05d5\u05ea\u05e8 \u05de\u05d4\u05d7\u05d5\u05d3\u05e9 \u05e9\u05e2\u05d1\u05e8',
+        sub:(less?'\u05d4\u05d5\u05e6\u05d0\u05ea\u05dd \u05e4\u05d7\u05d5\u05ea \u05de':'\u05d4\u05d5\u05e6\u05d0\u05ea\u05dd \u05d9\u05d5\u05ea\u05e8 \u05de')+MHE[pM],
+        tag:less?'\u2193 \u05e9\u05d9\u05e4\u05d5\u05e8':'\u2191 \u05e2\u05dc\u05d9\u05d9\u05d4',
+        tagOk:less
+      });
+    }
+  }
 
   if(topCat){
     slides.push({
-      grad:'wrapped-grad-2', emoji:getAllCats()[topCat[0]]?.i||'💰',
+      grad:'wrapped-grad-2', emoji:(getAllCats()[topCat[0]]&&getAllCats()[topCat[0]].i)||'\uD83D\uDCB0',
       num:topCatPct+'%',
-      title:`מההוצאות שלי הלכו ל${topCat[0]}`,
-      sub:'הקטגוריה המובילה שלי החודש. ואצלכם?'
+      title:'\u05de\u05d4\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05dc\u05db\u05d5 \u05dc'+topCat[0],
+      sub:'\u05d4\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4 \u05d4\u05de\u05d5\u05d1\u05d9\u05dc\u05d4 \u05e9\u05dc\u05db\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9'
+    });
+  }
+
+  // budget adherence
+  const budCats=Object.keys(buds).filter(c=>(buds[c]||0)>0);
+  if(budCats.length){
+    let within=0;
+    budCats.forEach(c=>{if((catTotals[c]||0)<=buds[c])within++;});
+    const pct=Math.round(within/budCats.length*100);
+    slides.push({
+      grad:'wrapped-grad-3', emoji:'\uD83C\uDFAF',
+      num:within+' \u05de\u05f4'+budCats.length,
+      title:'\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d5\u05ea \u05e0\u05e9\u05d0\u05e8\u05d5 \u05d1\u05ea\u05d5\u05da \u05d4\u05ea\u05e7\u05e6\u05d9\u05d1',
+      sub:'\u05d4\u05ea\u05e7\u05e6\u05d9\u05d1 \u05e9\u05e7\u05d1\u05e2\u05ea\u05dd \u05dc'+MHE[cM],
+      tag:pct+'% \u05e2\u05de\u05d9\u05d3\u05d4',
+      tagOk:pct>=60
     });
   }
 
   if(inc>0){
-    const rateText=savingsRate>=0?savingsRate+'%':'0%';
     slides.push({
-      grad:savingsRate>=20?'wrapped-grad-4':'wrapped-grad-3', emoji:savingsRate>=20?'🚀':'💪',
-      num:rateText,
-      title: savingsRate>=0
-        ? `מההכנסות שלי נשארו אצלי החודש!`
-        : `הוצאתי יותר ממה שהכנסתי החודש`,
-      sub: savingsRate>=20
-        ? 'שיעור חיסכון מעולה — תמשיכו ככה!'
-        : 'כל אחוז חיסכון נחשב. ואתם?'
+      grad:savingsRate>=20?'wrapped-grad-4':'wrapped-grad-3',
+      emoji:savingsRate>=20?'\uD83D\uDE80':'\uD83D\uDCAA',
+      num:(savingsRate>=0?savingsRate:0)+'%',
+      title:savingsRate>=0
+        ?'\u05de\u05d4\u05d4\u05db\u05e0\u05e1\u05d5\u05ea \u05e0\u05e9\u05d0\u05e8\u05d5 \u05d0\u05e6\u05dc\u05db\u05dd'
+        :'\u05d4\u05d5\u05e6\u05d0\u05ea\u05dd \u05d9\u05d5\u05ea\u05e8 \u05de\u05de\u05d4 \u05e9\u05d4\u05db\u05e0\u05e1\u05ea\u05dd',
+      sub:savingsRate>=20
+        ?'\u05e9\u05d9\u05e2\u05d5\u05e8 \u05d7\u05d9\u05e1\u05db\u05d5\u05df \u05de\u05e2\u05d5\u05dc\u05d4 \u2014 \u05ea\u05de\u05e9\u05d9\u05db\u05d5 \u05db\u05db\u05d4!'
+        :'\u05db\u05dc \u05d0\u05d7\u05d5\u05d6 \u05d7\u05d9\u05e1\u05db\u05d5\u05df \u05e0\u05d7\u05e9\u05d1'
     });
   }
 
   if(inv>0&&exp>0){
-    const invPct=Math.round(inv/(inv+exp)*100);
     slides.push({
-      grad:'wrapped-grad-3', emoji:'📈',
-      num:invPct+'%',
-      title:'מהתקציב שלי הופנה להשקעות',
-      sub:'בניתי את העתיד שלי גם החודש 💪'
+      grad:'wrapped-grad-3', emoji:'\uD83D\uDCC8',
+      num:Math.round(inv/(inv+exp)*100)+'%',
+      title:'\u05de\u05d4\u05ea\u05e7\u05e6\u05d9\u05d1 \u05d4\u05d5\u05e4\u05e0\u05d4 \u05dc\u05d4\u05e9\u05e7\u05e2\u05d5\u05ea',
+      sub:'\u05d1\u05e0\u05d9\u05ea\u05dd \u05d0\u05ea \u05d4\u05e2\u05ea\u05d9\u05d3 \u05d2\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9 \uD83D\uDCAA'
     });
   }
 
-  slides.push({
-    grad:'wrapped-grad-1', emoji:'✅',
-    num:String(txCount),
-    title:'עסקאות נרשמו החודש',
-    sub:'כל עסקה היא צעד לעבר שליטה פיננסית מלאה',
-    isLast:true
-  });
+  // goal progress
+  const g=goals&&goals.length?goals.slice().sort((a,b)=>parseFloat(b.saved||0)-parseFloat(a.saved||0))[0]:null;
+  if(g&&parseFloat(g.target||0)>0){
+    const t=parseFloat(g.target),s=parseFloat(g.saved||0);
+    const pct=Math.min(100,Math.round(s/t*100));
+    const left=Math.max(0,Math.round(t-s));
+    slides.push({
+      grad:'wrapped-grad-1', emoji:'\uD83C\uDFAF',
+      num:pct+'%',
+      title:'\u05de\u05d4\u05d9\u05e2\u05d3 "'+g.name+'"',
+      sub:pct>=100
+        ?'\u05d4\u05d2\u05e2\u05ea\u05dd \u05dc\u05d9\u05e2\u05d3! \uD83C\uDF89'
+        :'\u05e2\u05d5\u05d3 \u20aa'+fmt(left)+' \u05d5\u05d0\u05ea\u05dd \u05e9\u05dd \u2708\uFE0F',
+      tag:pct>=100?'\u05d4\u05d5\u05e9\u05dc\u05dd':'\u05d1\u05d3\u05e8\u05da',
+      tagOk:true,
+      isLast:true
+    });
+  }
 
+  if(slides.length){slides[slides.length-1].isLast=true;}
   return slides;
 }
 
@@ -3755,8 +3864,10 @@ function openWrapped(){
   _wrapIdx=0;
 
   // Build progress bars
+  _wrapPaused=false;
+  const pb=C('wrap-pause');if(pb)pb.textContent='⏸ השהה';
   C('wrapped-bars').innerHTML=_wrapSlides.map((_,i)=>
-    `<div class="wrapped-bar" id="wbar-${i}"><div class="wrapped-bar-fill"></div></div>`
+    `<div class="wrapped-bar" id="wbar-${i}" onclick="wrappedGoTo(${i})"><div class="wrapped-bar-fill"></div></div>`
   ).join('');
 
   // Build slides
@@ -3766,6 +3877,7 @@ function openWrapped(){
       <div class="wrapped-num">${s.num}</div>
       <div class="wrapped-title">${s.title}</div>
       <div class="wrapped-sub">${s.sub}</div>
+      ${s.tag?`<div class="wrapped-tag ${s.tagOk?'ok':'up'}">${s.tag}</div>`:''}
       <button class="wrapped-share" onclick="shareWrapped('${s.title.replace(/'/g,"\\'")}','${s.num}')">
         <span>📤</span><span>שתף</span>
       </button>
@@ -3778,34 +3890,57 @@ function openWrapped(){
 }
 
 function wrappedGoTo(i){
-  if(i<0){closeWrapped();return;}
-  if(i>=_wrapSlides.length){closeWrapped();return;}
+  if(i<0||i>=_wrapSlides.length)return;
   _wrapIdx=i;
   C('wrapped-track').style.transform=`translateX(${i*100}%)`;
-  // Update progress bars
   _wrapSlides.forEach((_,idx)=>{
-    const bar=C('wbar-'+idx);
+    const bar=C('wbar-'+idx);if(!bar)return;
     const fill=bar.querySelector('.wrapped-bar-fill');
-    bar.classList.remove('done');
-    if(idx<i){bar.classList.add('done');}
-    else{fill.style.transition='none';fill.style.width='0%';}
+    bar.classList.toggle('done',idx<i);
+    if(idx>=i){fill.style.transition='none';fill.style.transform='scaleX(0)';}
   });
   clearTimeout(_wrapTimer);
-  // Animate current bar
-  requestAnimationFrame(()=>{
-    const fill=C('wbar-'+i).querySelector('.wrapped-bar-fill');
-    fill.style.transition=`width ${WRAP_DURATION}ms linear`;
-    fill.style.width='100%';
-  });
-  _wrapTimer=setTimeout(()=>wrappedGoTo(i+1),WRAP_DURATION);
+  const cur=C('wbar-'+i);
+  const fill=cur?cur.querySelector('.wrapped-bar-fill'):null;
+  if(fill){
+    fill.style.transition='none';
+    fill.style.transform='scaleX(0)';
+    if(!_wrapPaused){
+      requestAnimationFrame(()=>{requestAnimationFrame(()=>{
+        fill.style.transition=`transform ${WRAP_DURATION}ms linear`;
+        fill.style.transform='scaleX(1)';
+      });});
+      _wrapTimer=setTimeout(()=>{
+        if(_wrapIdx<_wrapSlides.length-1)wrappedGoTo(_wrapIdx+1);
+      },WRAP_DURATION);
+    }else{
+      fill.style.transform='scaleX(0.35)';
+    }
+  }
+  const pos=C('wrap-pos');
+  if(pos)pos.textContent='שקופית '+(i+1)+' מתוך '+_wrapSlides.length;
+  const pv=C('wrap-prev'),nx=C('wrap-next');
+  if(pv)pv.disabled=(i===0);
+  if(nx)nx.disabled=(i===_wrapSlides.length-1);
 }
 
 function wrappedNav(dir){
-  wrappedGoTo(_wrapIdx+dir);
+  const n=_wrapIdx+dir;
+  if(n<0){toast('זו השקופית הראשונה');return;}
+  if(n>=_wrapSlides.length){toast('זו השקופית האחרונה');return;}
+  wrappedGoTo(n);
+}
+
+function wrappedPause(){
+  _wrapPaused=!_wrapPaused;
+  const b=C('wrap-pause');
+  if(b)b.textContent=_wrapPaused?'▶ המשך':'⏸ השהה';
+  wrappedGoTo(_wrapIdx);
 }
 
 function closeWrapped(){
   clearTimeout(_wrapTimer);
+  _wrapPaused=false;
   C('wrapped-ov').classList.remove('on');
 }
 
@@ -4597,6 +4732,9 @@ function goTab(name){
     C('tb-'+n).classList.toggle('on',n===name);
   });
   C('scroll').scrollTop=0;
+  const showFab=(name==='home'||name==='history');
+  const fb=C('fab');
+  if(fb){fb.style.display=showFab?'flex':'none';if(!showFab)fb.classList.remove('open');}
   // Always re-render stats when switching to it
   if(name==='stats')renderStats();
   else if(name==='invest')renderInvestTab();
