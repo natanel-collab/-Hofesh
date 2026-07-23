@@ -614,6 +614,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .mt-h2{font-size:.6rem;color:var(--txt2);margin-top:.05rem}
 .mt-hmo{font-size:.85rem;flex-shrink:0}
 .mt-hgo{font-size:.7rem;color:var(--txt3);flex-shrink:0}
+.mt-dechint{font-size:.55rem;color:var(--txt3);text-align:center;padding-top:.5rem;line-height:1.6}
 .mt-del{background:none;border:none;font-size:.75rem;color:var(--txt3);cursor:pointer;
   font-family:inherit;padding:.2rem .3rem;flex-shrink:0;opacity:.55}
 .mt-del:active{transform:scale(.85);opacity:1}
@@ -1239,8 +1240,8 @@ select.mt-inp{appearance:none}
         <button class="ptog-btn" id="pb-year" onclick="setPeriod('year')">שנתי</button>
       </div>
       <div id="period-label" style="font-size:.72rem;font-weight:600;color:var(--txt2);margin-bottom:.5rem;text-align:center"></div>
-      <div id="period-summary" style="border-radius:var(--r);padding:1rem;margin-bottom:.65rem;
-        display:flex;align-items:center;justify-content:space-between" class="glass"></div>
+      <div id="period-summary" style="border-radius:var(--r);padding:.95rem .8rem;margin-bottom:.65rem;
+        display:flex;flex-direction:column" class="glass"></div>
 
       <div onclick="openWrapped()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
         background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));
@@ -1269,8 +1270,6 @@ select.mt-inp{appearance:none}
         <div class="fbar"><div class="fbar-fill" id="fr-bar-stats" style="width:0%"></div></div>
       </div>
 
-      <div class="sg" id="stat-grid"></div>
-      <div class="card glass"><div class="card-head">💚 סטטיסטיקת הכנסות</div><div id="inc-stats"></div></div>
       <div class="card glass">
         <div class="card-head">📊 הוצאות שבועיות</div>
         <div class="bars" id="wk-bars"></div>
@@ -1421,6 +1420,17 @@ select.mt-inp{appearance:none}
   <!-- ADD TX -->
   <div class="ov ov-meet" id="ov-meet">
     <div class="mt-screen" id="mt-screen"></div>
+  </div>
+
+  <div class="ov" id="ov-mtdeldec" onclick="if(event.target===this)C('ov-mtdeldec').classList.remove('on')">
+    <div class="sheet" style="text-align:center">
+      <div class="sh-handle"></div>
+      <div style="font-size:1.8rem;margin-bottom:.3rem">🗑</div>
+      <div class="sh-title">למחוק את ההחלטה?</div>
+      <div id="mtdeldec-txt" style="font-size:.75rem;color:var(--txt2);margin:.3rem 0 1rem;line-height:1.6"></div>
+      <button onclick="mtDoDelDec()" style="width:100%;padding:.8rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.9rem;font-weight:800;border:none;cursor:pointer;margin-bottom:.45rem">מחק לצמיתות</button>
+      <button onclick="C('ov-mtdeldec').classList.remove('on')" style="width:100%;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
+    </div>
   </div>
 
   <div class="ov" id="ov-mtdel" onclick="if(event.target===this)C('ov-mtdel').classList.remove('on')">
@@ -1886,7 +1896,7 @@ let histView='date';
 let txReactions={};
 let budRows=[];
 let meetings=[], mDecs=[], mReviews=[], mMoods=[], mSavings=[], mBudChg=[];
-let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live', _mtDelId=null;
+let curMeet=null, mtOpen={}, mtManual={}, mtBudMonth=1, mtStage='live', _mtDelId=null, _mtDelDecId=null;
 let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
@@ -3077,9 +3087,10 @@ function renderMeetTab(){
     mDecs.slice(0,20).forEach(d=>{
       h+='<div class="mt-dec-it'+(d.active===false?' off':'')+'">'+
          '<div class="mt-dchk" onclick="mtToggleDec(\''+d.id+'\')">✓</div>'+
-         '<div class="mt-dx">'+esc(d.txt)+'</div></div>';
+         '<div class="mt-dx">'+esc(d.txt)+'</div>'+
+         '<button class="mt-del" onclick="mtAskDelDec(\''+d.id+'\')">🗑</button></div>';
     });
-    dl.innerHTML=h||'<div class="mt-empty">עוד לא קבעתם החלטות משותפות</div>';
+    dl.innerHTML=(h?h+'<div class="mt-dechint">✓ השבתה · 🗑 מחיקה מוחלטת</div>':'')||'<div class="mt-empty">עוד לא קבעתם החלטות משותפות</div>';
   }
   const sv=C('mt-goals');
   if(sv){
@@ -3119,6 +3130,25 @@ function renderMeetTab(){
     });
     hs.innerHTML=h||'<div class="mt-empty">כאן יופיעו המפגשים שלכם</div>';
   }
+}
+
+function mtAskDelDec(id){
+  const d=mDecs.find(x=>String(x.id)===String(id));if(!d)return;
+  _mtDelDecId=id;
+  C('mtdeldec-txt').textContent='"'+d.txt+'" — תיעלם לגמרי מהרשימה';
+  C('ov-mtdeldec').classList.add('on');
+}
+async function mtDoDelDec(){
+  if(!_mtDelDecId)return;
+  const id=_mtDelDecId;_mtDelDecId=null;
+  C('ov-mtdeldec').classList.remove('on');
+  const {error}=await sb.from('meeting_decisions').delete().eq('id',id);
+  if(error){toast('שגיאה במחיקה'+(error.message?': '+error.message:''));return;}
+  mDecs=mDecs.filter(x=>String(x.id)!==String(id));
+  mReviews=mReviews.filter(x=>String(x.decision_id)!==String(id));
+  renderMeetTab();
+  if(curMeet&&C('ov-meet').classList.contains('on'))mtRender();
+  toast('ההחלטה נמחקה ✓');
 }
 
 function mtAskDelete(id){
@@ -3596,7 +3626,7 @@ function setPeriod(p){
   period=p;
   ['month','week','year'].forEach(x=>C('pb-'+x).classList.toggle('on',x===p));
   C('scroll').scrollTop=0;
-  const sg=C('stat-grid');if(sg){sg.style.opacity='.4';setTimeout(()=>sg.style.opacity='1',150);}
+  const sg=C('period-summary');if(sg){sg.style.opacity='.4';setTimeout(()=>sg.style.opacity='1',150);}
   renderStats();
 }
 function setHF(f){
@@ -4233,19 +4263,35 @@ function renderHomeGoals(){
 }
 
 function renderHomeTxs(){
-  const mt=mTxs().slice(0,10);
-  C('home-txs').innerHTML=mt.map(mkTx).join('');
+  const all=mTxs();
+  const mt=all.slice(0,5);
+  let h=mt.map(mkTx).join('');
+  if(all.length>5){
+    h+='<div onclick="goTab(\'history\')" style="text-align:center;font-size:.72rem;color:var(--blu);'+
+       'padding:.6rem 0;cursor:pointer;background:var(--blu-d);border:1px solid var(--blu-b);'+
+       'border-radius:14px;font-weight:700;margin-top:.2rem">📋 לכל '+all.length+' העסקאות ◀</div>';
+  }
+  C('home-txs').innerHTML=h;
   C('home-empty').style.display=mt.length?'none':'block';
 }
 
 function renderPeriodSummary(pt){
   const inc=sumT(pt,'income'),exp=sumT(pt,'expense'),inv=sumT(pt,'invest'),net=inc-exp;
+  const txC=pt.filter(t=>t.type==='expense').length;
   const el=C('period-summary');if(!el)return;
+  const cell=(l,v,c)=>`<div style="flex:1;text-align:center"><div style="font-size:.58rem;color:var(--txt2);margin-bottom:.2rem">${l}</div><div style="font-size:.95rem;font-weight:900;letter-spacing:-.02em;color:${c}">${v}</div></div>`;
+  const small=(l,v,extra)=>`<div style="flex:1;text-align:center"${extra||''}><div style="font-size:.58rem;color:var(--txt2);margin-bottom:.2rem">${l}</div><div style="font-size:.8rem;font-weight:800;color:var(--txt)">${v}</div></div>`;
   el.innerHTML=`
-    <div style="text-align:center"><div style="font-size:.6rem;color:var(--txt2);margin-bottom:.15rem">הכנסות</div><div style="font-size:.95rem;font-weight:700;color:var(--grn)">₪${fmt(inc)}</div></div>
-    <div style="text-align:center"><div style="font-size:.6rem;color:var(--txt2);margin-bottom:.15rem">הוצאות</div><div style="font-size:.95rem;font-weight:700;color:var(--red)">₪${fmt(exp)}</div></div>
-    <div style="text-align:center"><div style="font-size:.6rem;color:var(--txt2);margin-bottom:.15rem">מאזן</div><div style="font-size:.95rem;font-weight:700;color:${net>=0?'var(--grn)':'var(--red)'}">${net>=0?'+':''}₪${fmt(net)}</div></div>
-    <div style="text-align:center"><div style="font-size:.6rem;color:var(--txt2);margin-bottom:.15rem">השקעות</div><div style="font-size:.95rem;font-weight:700;color:var(--pur)">₪${fmt(inv)}</div></div>`;
+    <div style="display:flex;width:100%;padding-bottom:.7rem;margin-bottom:.7rem;border-bottom:1px solid var(--border)">
+      ${cell('הכנסות','₪'+fmt(inc),'var(--grn)')}
+      ${cell('הוצאות','₪'+fmt(exp),'var(--red)')}
+      ${cell('מאזן',(net>=0?'+':'')+'₪'+fmt(net),net>=0?'var(--grn)':'var(--red)')}
+      ${cell('השקעות','₪'+fmt(inv),'var(--pur)')}
+    </div>
+    <div style="display:flex;width:100%">
+      ${small('ממוצע הוצאה','₪'+fmt(txC?exp/txC:0))}
+      ${small('ייצוא נתונים','📤 CSV',' onclick="exportCSV()" style="flex:1;text-align:center;cursor:pointer"')}
+    </div>`;
 }
 
 function renderPie(data){
@@ -4327,20 +4373,11 @@ function renderStats(){
     else if(period==='week'){const ws=new Date();ws.setDate(ws.getDate()-ws.getDay());lbl.textContent=`📅 שבוע ${ws.toLocaleDateString('he-IL',{day:'numeric',month:'short'})} – ${new Date().toLocaleDateString('he-IL',{day:'numeric',month:'short'})}`;}
     else lbl.textContent=`📅 שנת ${cY}`;}
   const inc=sumT(pt,'income'),exp=sumT(pt,'expense'),inv=sumT(pt,'invest'),txC=pt.filter(t=>t.type==='expense').length;
-  C('stat-grid').innerHTML=`
-    <div class="sc"><div class="sc-lbl">הכנסות</div><div class="sc-val" style="color:var(--grn)">₪${fmt(inc)}</div></div>
-    <div class="sc"><div class="sc-lbl">הוצאות</div><div class="sc-val" style="color:var(--red)">₪${fmt(exp)}</div></div>
-    <div class="sc"><div class="sc-lbl">השקעות</div><div class="sc-val" style="color:var(--pur)">₪${fmt(inv)}</div></div>
-    <div class="sc"><div class="sc-lbl">חיסכון</div><div class="sc-val" style="color:var(--blu)">₪${fmt(Math.max(0,inc-exp))}</div></div>
-    <div class="sc"><div class="sc-lbl">ממוצע הוצאה</div><div class="sc-val">₪${fmt(txC?exp/txC:0)}</div></div>
-    <div class="sc" style="cursor:pointer" onclick="exportCSV()"><div class="sc-lbl">ייצוא</div><div class="sc-val">📤 CSV</div></div>`;
-  const iCats={};pt.filter(t=>t.type==='income').forEach(t=>{iCats[t.category]=(iCats[t.category]||0)+t.amount;});
-  const pn=period==='week'?'השבוע':period==='year'?`בשנת ${cY}`:`ב${MHE[cM]}`;
-  C('inc-stats').innerHTML=inc>0?Object.entries(iCats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{const c=getAllCats()[cat]||getAllCats()['אחר'],pct=Math.round(amt/inc*100);return `<div style="margin-bottom:.65rem"><div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.78rem"><span>${c.i} ${cat}</span><span style="color:var(--txt2)">${pct}% · ₪${fmt(amt)}</span></div><div class="ptrack"><div class="pfill" style="width:${pct}%;background:${c.c}"></div></div></div>`;}).join(''):`<div style="font-size:.78rem;color:var(--txt2);text-align:center;padding:.5rem 0">אין הכנסות ${pn}</div>`;
-  const eTots={};pt.filter(t=>t.type==='expense').forEach(t=>{eTots[t.category]=(eTots[t.category]||0)+t.amount;});
+    const eTots={};pt.filter(t=>t.type==='expense').forEach(t=>{eTots[t.category]=(eTots[t.category]||0)+t.amount;});
   const pieData=Object.entries(eTots).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({n,v,c:(getAllCats()[n]||getAllCats()['אחר']).c}));
   if(pieData.length)renderPie(pieData);
-  else{C('pie').innerHTML=`<circle cx="50" cy="50" r="44" fill="rgba(255,255,255,.04)"/><text x="50" y="55" text-anchor="middle" font-size="10" fill="#48484a">אין נתונים</text>`;C('pie-leg').innerHTML=`<div style="font-size:.75rem;color:var(--txt2)">אין הוצאות</div>`;}
+  else{
+  C('pie').innerHTML=`<circle cx="50" cy="50" r="44" fill="rgba(255,255,255,.04)"/><text x="50" y="55" text-anchor="middle" font-size="10" fill="#48484a">אין נתונים</text>`;C('pie-leg').innerHTML=`<div style="font-size:.75rem;color:var(--txt2)">אין הוצאות</div>`;}
   if(period==='week'){
     C('bar-title').textContent='📊 הוצאות לפי יום';
     const days=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'],dt=Array(7).fill(0);
