@@ -1192,10 +1192,6 @@ select.mt-inp{appearance:none}
         <div id="bud-list"></div>
       </div>
 
-      <div class="card glass" id="motiv-card" style="display:none">
-        <div id="motiv-content"></div>
-      </div>
-
       <div class="card glass" id="acc-card" style="display:none;padding:.85rem 1rem">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem">
           <span style="font-size:.85rem;font-weight:800">🏦 החשבונות שלנו</span>
@@ -1210,20 +1206,6 @@ select.mt-inp{appearance:none}
           <span id="inv-total" style="font-size:.85rem;color:var(--grn);font-weight:700">סה"כ: ₪0</span>
         </div>
         <div id="inv-breakdown" style="display:flex;flex-direction:column;gap:.5rem"></div>
-      </div>
-
-      <div onclick="openWrapped()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
-        background:linear-gradient(135deg,rgba(191,90,242,0.15),rgba(10,132,255,0.12));
-        border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:.8rem;margin-bottom:.75rem;
-        font-size:.85rem;font-weight:700;color:#fff">
-        <span style="font-size:1.2rem">✨</span>
-        <span>הסיכום שלי לחודש</span>
-        <span style="font-size:1.2rem">→</span>
-      </div>
-
-      <div class="card glass">
-        <div class="card-head">📊 הוצאות שבועיות</div>
-        <div class="bars" id="wk-bars"></div>
       </div>
 
       <div class="card glass" id="home-goals-card">
@@ -1260,6 +1242,15 @@ select.mt-inp{appearance:none}
       <div id="period-summary" style="border-radius:var(--r);padding:1rem;margin-bottom:.65rem;
         display:flex;align-items:center;justify-content:space-between" class="glass"></div>
 
+      <div onclick="openWrapped()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
+        background:linear-gradient(135deg,var(--acc-d),rgba(255,255,255,0.04));
+        border:1px solid var(--acc-b);border-radius:18px;padding:.8rem;margin-bottom:.65rem;
+        font-size:.85rem;font-weight:700;color:var(--txt)">
+        <span style="font-size:1.2rem">✨</span>
+        <span>הסיכום שלי לחודש</span>
+        <span style="font-size:1rem">◀</span>
+      </div>
+
       <!-- Freedom in stats -->
       <div class="freedom glass" style="margin-bottom:.65rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -1280,6 +1271,11 @@ select.mt-inp{appearance:none}
 
       <div class="sg" id="stat-grid"></div>
       <div class="card glass"><div class="card-head">💚 סטטיסטיקת הכנסות</div><div id="inc-stats"></div></div>
+      <div class="card glass">
+        <div class="card-head">📊 הוצאות שבועיות</div>
+        <div class="bars" id="wk-bars"></div>
+      </div>
+
       <div class="card glass">
         <div class="card-head">🥧 התפלגות הוצאות</div>
         <div class="pie-wrap">
@@ -4035,106 +4031,41 @@ function exportCSV(){
 }
 
 // ════ RENDER ════
-function renderMotivation(){
-  const card=C('motiv-card');
-  const cnt=C('motiv-content');
-  if(!card||!cnt)return;
-  
+function getMotivInsights(){
+  const out=[];
   const today=new Date();
-  const todayStr=today.toISOString().split('T')[0];
-  
-  // Calculate streak: consecutive days without expense > 100
+  if(!txs.some(t=>t.type==='expense'))return out;
+
+  // streak: consecutive days under 100
   let streak=0;
-  const sortedDays=[];
   for(let i=0;i<30;i++){
-    const d=new Date(today);
-    d.setDate(d.getDate()-i);
+    const d=new Date(today);d.setDate(d.getDate()-i);
     const dStr=d.toISOString().split('T')[0];
-    const dayExp=txs.filter(t=>t.type==='expense'&&t.date?.substring(0,10)===dStr).reduce((s,t)=>s+t.amount,0);
-    sortedDays.push({date:dStr,exp:dayExp});
-    if(i===0&&dayExp<100){streak=1;continue;}
-    if(dayExp<100&&streak>0)streak++;
-    else if(i>0&&dayExp>=100)break;
+    const dayExp=txs.filter(t=>t.type==='expense'&&(t.date||'').substring(0,10)===dStr)
+      .reduce((s,t)=>s+t.amount,0);
+    if(dayExp<100)streak++;else break;
   }
-  
-  // Calculate this week vs last week
-  const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
-  const twoWeeksAgo=new Date(today);twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
-  
-  const thisWeekExp=txs.filter(t=>{
-    const d=new Date(t.date);
-    return t.type==='expense'&&d>=weekAgo&&d<=today;
-  }).reduce((s,t)=>s+t.amount,0);
-  
-  const lastWeekExp=txs.filter(t=>{
-    const d=new Date(t.date);
-    return t.type==='expense'&&d>=twoWeeksAgo&&d<weekAgo;
-  }).reduce((s,t)=>s+t.amount,0);
-  
-  // Build messages
-  const messages=[];
-  
-  // Streak message
-  if(streak>=7){
-    messages.push({icon:'🔥',title:streak+' ימים ברצף!',sub:'פחות מ-₪100 ביום — שבוע שלם של חסכון',color:'#ff9f0a'});
-  } else if(streak>=3){
-    messages.push({icon:'⚡',title:streak+' ימים של חסכון',sub:'פחות מ-₪100 ביום — תמשיך עד 7 ימים!',color:'#ffd60a'});
-  } else if(streak>=1){
-    messages.push({icon:'✨',title:'יום של חסכון',sub:'פחות מ-₪100 ביום — מתחילים רצף!',color:'#30d158'});
+
+  // this week vs previous week
+  const wA=new Date(today);wA.setDate(wA.getDate()-7);
+  const wB=new Date(today);wB.setDate(wB.getDate()-14);
+  const thisW=txs.filter(t=>{const d=new Date(t.date);return t.type==='expense'&&d>=wA&&d<=today;})
+    .reduce((s,t)=>s+t.amount,0);
+  const lastW=txs.filter(t=>{const d=new Date(t.date);return t.type==='expense'&&d>=wB&&d<wA;})
+    .reduce((s,t)=>s+t.amount,0);
+  let weekDiff=null;
+  if(lastW>0&&thisW>0)weekDiff=Math.round((thisW-lastW)/lastW*100);
+
+  if(streak>=3){
+    out.push({kind:'streak',days:streak});
   }
-  
-  // Week comparison message
-  if(lastWeekExp>0&&thisWeekExp>0){
-    const diff=thisWeekExp-lastWeekExp;
-    const pct=Math.round((diff/lastWeekExp)*100);
-    if(pct<=-10){
-      messages.push({icon:'💪',title:'חסכת '+Math.abs(pct)+'% השבוע!',sub:'₪'+fmt(Math.abs(diff))+' פחות מהשבוע שעבר',color:'#30d158'});
-    } else if(pct>=20){
-      messages.push({icon:'⚠️',title:'הוצאת '+pct+'% יותר השבוע',sub:'תפקח עין על ההוצאות',color:'#ff453a'});
-    }
+  if(weekDiff!==null&&Math.abs(weekDiff)>=15){
+    out.push({kind:'week',diff:weekDiff});
   }
-  
-  // Budget warnings count
-  const mt=mTxs();
-  const totsByCat={};
-  mt.filter(t=>t.type==='expense').forEach(t=>{totsByCat[t.category]=(totsByCat[t.category]||0)+t.amount;});
-  let warnCount=0,exceedCount=0;
-  Object.keys(buds).forEach(cat=>{
-    const b=buds[cat];
-    if(!b)return;
-    const s=totsByCat[cat]||0;
-    const p=s/b*100;
-    if(p>=100)exceedCount++;
-    else if(p>=80)warnCount++;
-  });
-  if(exceedCount>0){
-    messages.push({icon:'🚨',title:'חרגת מתקציב ב-'+exceedCount+' '+(exceedCount===1?'קטגוריה':'קטגוריות'),sub:'בדוק את התקציב כדי להחזיר שליטה',color:'#ff453a'});
-  } else if(warnCount>0){
-    messages.push({icon:'⚠️',title:'מתקרב לתקציב ב-'+warnCount+' '+(warnCount===1?'קטגוריה':'קטגוריות'),sub:'נשארו מעל 80% מהתקציב החודשי',color:'#ffd60a'});
-  }
-  
-  // No expenses today
-  const todayExp=txs.filter(t=>t.type==='expense'&&t.date?.substring(0,10)===todayStr).reduce((s,t)=>s+t.amount,0);
-  if(todayExp===0&&messages.length===0){
-    messages.push({icon:'🎯',title:'יום נקי מהוצאות',sub:'תמשיך לשמור על הקצב',color:'#0a84ff'});
-  }
-  
-  if(messages.length===0){
-    card.style.display='none';
-    return;
-  }
-  
-  card.style.display='block';
-  cnt.innerHTML=messages.map(m=>`
-    <div style="display:flex;align-items:center;gap:.85rem;padding:.3rem 0">
-      <div style="font-size:2rem;flex-shrink:0">${m.icon}</div>
-      <div style="flex:1">
-        <div style="font-size:.95rem;font-weight:700;color:${m.color}">${m.title}</div>
-        <div style="font-size:.75rem;color:var(--txt2);margin-top:.15rem">${m.sub}</div>
-      </div>
-    </div>
-  `).join('');
+  return out;
 }
+
+function renderMotivation(){/* merged into getInsights() */}
 
 function renderBalance(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
@@ -4182,6 +4113,7 @@ function renderBalance(){
 }
 
 function renderWeekBars(){
+  if(!C('wk-bars'))return;
   const mt=mTxs();
   const first=new Date(cY,cM,1).getDay();
   const dim=new Date(cY,cM+1,0).getDate();
@@ -4325,19 +4257,66 @@ function renderPie(data){
 }
 
 function getInsights(pt){
-  const mt=pt||mTxs(),wt=wTxs(),ins=[];
+  const mt=pt||mTxs(),wt=wTxs();
   const exp=sumT(mt,'expense'),inc=sumT(mt,'income');
+  const warn=[],good=[],info=[];
+
+  const tots={};
+  mt.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+t.amount;});
+
+  // 1. budget overrun (merged: count + names)
+  const over=Object.keys(buds).filter(c=>(buds[c]||0)>0&&(tots[c]||0)>buds[c]);
+  if(over.length){
+    warn.push({i:'\uD83D\uDEA8',
+      t:'\u05d7\u05e8\u05d2\u05ea\u05dd \u05de\u05d4\u05ea\u05e7\u05e6\u05d9\u05d1 \u05d1-'+over.length+' \u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d5\u05ea',
+      s:over.slice(0,4).join(' \u00b7 ')+(over.length>4?' \u05d5\u05e2\u05d5\u05d3...':''),k:'warn'});
+  }
+
+  // 2. period comparison (merged: month + week in one)
   const lmt=mTxs(cM===0?11:cM-1,cM===0?cY-1:cY),lexp=sumT(lmt,'expense');
-  if(lexp>0){const d=Math.round((exp-lexp)/lexp*100);if(d>15)ins.push({i:'📈',t:`הוצאת ${d}% יותר מהחודש הקודם`,k:'warn'});else if(d<-10)ins.push({i:'📉',t:`הוצאת ${Math.abs(d)}% פחות 💪`,k:'good'});}
-  const tots={};mt.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+t.amount;});
+  const mv=getMotivInsights();
+  const wk=mv.find(x=>x.kind==='week');
+  if(lexp>0&&exp>0){
+    const d=Math.round((exp-lexp)/lexp*100);
+    const wkTxt=wk?('\u05d5\u05d1\u05e9\u05d1\u05d5\u05e2 \u05d4\u05d0\u05d7\u05e8\u05d5\u05df \u2014 '+Math.abs(wk.diff)+'% '+(wk.diff>0?'\u05d9\u05d5\u05ea\u05e8':'\u05e4\u05d7\u05d5\u05ea')+' \u05de\u05d4\u05e7\u05d5\u05d3\u05dd'):'';
+    if(d>15)warn.push({i:'\uD83D\uDCC8',t:d+'% \u05d9\u05d5\u05ea\u05e8 \u05de\u05d4\u05d7\u05d5\u05d3\u05e9 \u05d4\u05e7\u05d5\u05d3\u05dd',s:wkTxt,k:'warn'});
+    else if(d<-10)good.push({i:'\uD83D\uDCC9',t:Math.abs(d)+'% \u05e4\u05d7\u05d5\u05ea \u05de\u05d4\u05d7\u05d5\u05d3\u05e9 \u05d4\u05e7\u05d5\u05d3\u05dd \uD83D\uDCAA',s:wkTxt,k:'good'});
+    else if(wk&&Math.abs(wk.diff)>=30){
+      const up=wk.diff>0;
+      (up?warn:good).push({i:up?'\u26A0\uFE0F':'\uD83D\uDCC9',
+        t:Math.abs(wk.diff)+'% '+(up?'\u05d9\u05d5\u05ea\u05e8':'\u05e4\u05d7\u05d5\u05ea')+' \u05d4\u05e9\u05d1\u05d5\u05e2',
+        s:up?'\u05ea\u05e4\u05e7\u05d7\u05d5 \u05e2\u05d9\u05df \u05e2\u05dc \u05d4\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea':'\u05de\u05d2\u05de\u05d4 \u05d9\u05e4\u05d4 \uD83D\uDC4F',k:up?'warn':'good'});
+    }
+  }
+
+  // 3. streak
+  const st=mv.find(x=>x.kind==='streak');
+  if(st){
+    good.push({i:st.days>=7?'\uD83D\uDD25':'\u26A1',
+      t:st.days+' \u05d9\u05de\u05d9\u05dd \u05e9\u05dc \u05d7\u05d9\u05e1\u05db\u05d5\u05df \u05d1\u05e8\u05e6\u05e3',
+      s:st.days>=7?'\u05e9\u05d1\u05d5\u05e2 \u05e9\u05dc\u05dd \u05e9\u05dc \u05d7\u05d9\u05e1\u05db\u05d5\u05df!':'\u05e4\u05d7\u05d5\u05ea \u05de-\u20aa100 \u05d1\u05d9\u05d5\u05dd \u2014 \u05ea\u05de\u05e9\u05d9\u05db\u05d5 \u05e2\u05d3 7!',k:'good'});
+  }
+
+  // 4. savings rate
+  if(inc>0){
+    const rate=Math.round((inc-exp)/inc*100);
+    if(rate>=20)good.push({i:'\uD83D\uDC9A',t:'\u05d7\u05d5\u05e1\u05db\u05d9\u05dd '+rate+'% \u05de\u05d4\u05d4\u05db\u05e0\u05e1\u05d5\u05ea',s:'\u05e9\u05d9\u05e2\u05d5\u05e8 \u05d7\u05d9\u05e1\u05db\u05d5\u05df \u05d1\u05e8\u05d9\u05d0 \uD83C\uDF89',k:'good'});
+    else if(rate<0)warn.push({i:'\uD83D\uDD34',t:'\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e2\u05d5\u05dc\u05d5\u05ea \u05e2\u05dc \u05d4\u05db\u05e0\u05e1\u05d5\u05ea',s:'',k:'warn'});
+  }
+
+  // 5. top category + daily average
   const top=Object.entries(tots).sort((a,b)=>b[1]-a[1])[0];
-  if(top)ins.push({i:getAllCats()[top[0]]?.i||'💸',t:`הכי יקר: ${top[0]} (₪${fmt(top[1])})`,k:'info'});
-  const over=Object.entries(buds).filter(([cat,b])=>b>0&&(tots[cat]||0)>b);
-  if(over.length)ins.push({i:'⚠️',t:`חריגה: ${over.map(([c])=>c).join(', ')}`,k:'warn'});
-  if(inc>0){const rate=Math.round((inc-exp)/inc*100);if(rate>=20)ins.push({i:'💚',t:`חוסך ${rate}% מהכנסות 🎉`,k:'good'});else if(rate<0)ins.push({i:'🔴',t:'הוצאות עולות על הכנסות',k:'warn'});}
-  const wexp=sumT(wt,'expense');if(wexp>0)ins.push({i:'📅',t:`ממוצע יומי השבוע: ₪${fmt(wexp/Math.max(1,new Date().getDay()||7))}`,k:'info'});
-  if(!ins.length)ins.push({i:'✨',t:'הוסף עסקאות לקבלת תובנות',k:'info'});
-  return ins;
+  if(top){
+    const wexp=sumT(wt,'expense');
+    const avg=wexp>0?('\u00b7 \u05de\u05de\u05d5\u05e6\u05e2 \u05d9\u05d5\u05de\u05d9 \u20aa'+fmt(wexp/Math.max(1,new Date().getDay()||7))):'';
+    info.push({i:(getAllCats()[top[0]]&&getAllCats()[top[0]].i)||'\uD83D\uDCB8',
+      t:'\u05d4\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4 \u05d4\u05d9\u05e7\u05e8\u05d4: '+top[0],
+      s:'\u20aa'+fmt(top[1])+' '+avg,k:'info'});
+  }
+
+  const all=warn.concat(good).concat(info);
+  if(!all.length)all.push({i:'\u2728',t:'\u05d4\u05d5\u05e1\u05d9\u05e4\u05d5 \u05e2\u05e1\u05e7\u05d0\u05d5\u05ea \u05dc\u05e7\u05d1\u05dc\u05ea \u05ea\u05d5\u05d1\u05e0\u05d5\u05ea',s:'',k:'info'});
+  return all.slice(0,6);
 }
 
 function renderStats(){
@@ -4379,7 +4358,17 @@ function renderStats(){
     const mx=Math.max(...bars.map(b=>Math.max(b.i,b.e)),1);
     C('stat-bars').innerHTML=bars.map(b=>`<div class="bw" style="gap:.12rem"><div style="display:flex;gap:2px;align-items:flex-end;height:78px;width:100%"><div style="flex:1;background:rgba(48,209,88,.12);border-radius:4px 4px 0 0;display:flex;align-items:flex-end"><div style="width:100%;background:var(--grn);border-radius:4px 4px 0 0;height:${b.i/mx*100}%;min-height:${b.i?2:0}px;transition:height .5s"></div></div><div style="flex:1;background:rgba(255,69,58,.12);border-radius:4px 4px 0 0;display:flex;align-items:flex-end"><div style="width:100%;background:var(--red);border-radius:4px 4px 0 0;height:${b.e/mx*100}%;min-height:${b.e?2:0}px;transition:height .5s"></div></div></div><div class="blbl">${b.l}</div></div>`).join('');
   }
-  C('insights').innerHTML=getInsights(pt).map(ins=>`<div class="ins" style="background:${ins.k==='good'?'var(--grn-d)':ins.k==='warn'?'var(--red-d)':'var(--s1)'};border:.5px solid ${ins.k==='good'?'var(--grn-b)':ins.k==='warn'?'var(--red-b)':'var(--b1)'}"><span class="ins-ico">${ins.i}</span><span class="ins-txt" style="color:${ins.k==='good'?'var(--grn)':ins.k==='warn'?'var(--red)':'var(--txt2)'}">${ins.t}</span></div>`).join('');
+  C('insights').innerHTML=getInsights(pt).map(ins=>{
+    const bg=ins.k==='good'?'var(--grn-d)':ins.k==='warn'?'var(--red-d)':'var(--surface)';
+    const bd=ins.k==='good'?'var(--grn-b)':ins.k==='warn'?'var(--red-b)':'var(--border)';
+    const cl=ins.k==='good'?'var(--grn)':ins.k==='warn'?'var(--red)':'var(--txt)';
+    return `<div class="ins" style="background:${bg};border:1px solid ${bd}">
+      <span class="ins-ico">${ins.i}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:700;line-height:1.4;color:${cl}">${esc(ins.t)}</div>
+        ${ins.s?`<div style="font-size:.65rem;color:var(--txt2);margin-top:.15rem;line-height:1.45">${esc(ins.s)}</div>`:''}
+      </div></div>`;
+  }).join('');
 }
 
 function setHistView(v){
@@ -4460,7 +4449,7 @@ function renderGoals(){
 
 function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
-  renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
+  renderBalance();renderHomeGoals();renderWeekBars();
   renderInvPortfolio();renderBudget();renderHomeTxs();renderMeetTab();
   renderStats();renderHistory();renderGoals();
   if(C('v-invest')&&C('v-invest').classList.contains('on'))renderInvestTab();
@@ -4736,7 +4725,7 @@ function goTab(name){
   const fb=C('fab');
   if(fb){fb.style.display=showFab?'flex':'none';if(!showFab)fb.classList.remove('open');}
   // Always re-render stats when switching to it
-  if(name==='stats')renderStats();
+  if(name==='stats'){renderStats();renderWeekBars();}
   else if(name==='invest')renderInvestTab();
   else if(name==='history')renderHistory();
   else if(name==='goals')renderGoals();
