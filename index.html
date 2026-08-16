@@ -1166,8 +1166,17 @@ select.mt-inp{appearance:none}
           <div class="bal-open-lbl" id="ob-lbl">פתיחה: ₪0</div>
           <button class="bal-open-btn" onclick="openOb()">✎ עדכן</button>
         </div>
-        <div class="bal-lbl">יתרה כוללת</div>
+        <div class="bal-lbl">יתרה פנויה</div>
         <div class="bal-big" id="bal-big" onclick="openOb()">₪0</div>
+        <div id="bal-sav-sep" style="display:none;align-items:center;justify-content:space-between;
+          margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--txt2);font-weight:600">
+            <div style="width:1.5rem;height:1.5rem;border-radius:.5rem;background:var(--blu-d);
+              display:flex;align-items:center;justify-content:center;font-size:.85rem">🎯</div>
+            חיסכון <span style="font-size:.6rem;color:var(--txt3)">(בנפרד)</span>
+          </div>
+          <div style="font-size:1rem;font-weight:800;color:var(--blu)" id="bal-sav-val">₪0</div>
+        </div>
         <div class="bal-row">
           <div class="bal-item">
             <div class="bal-item-lbl"><div class="bal-dot" style="background:var(--grn)"></div>הכנסות</div>
@@ -1186,11 +1195,6 @@ select.mt-inp{appearance:none}
           </div>
         </div>
         <div style="display:flex;gap:.6rem;margin-top:.6rem;position:relative;z-index:1">
-          <div style="flex:1;background:var(--grn-d);border:1px solid var(--grn-b);border-radius:10px;
-            padding:.5rem .65rem;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:.62rem;color:var(--grn)">🎯 חיסכון</div>
-            <div style="font-size:.88rem;font-weight:700;color:var(--grn)" id="m-sav">₪0</div>
-          </div>
           <div style="flex:1;background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.22);
             border-radius:10px;padding:.5rem .65rem;display:flex;align-items:center;
             justify-content:space-between;cursor:pointer" onclick="openCashModal()">
@@ -4217,10 +4221,15 @@ function renderBalance(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
   const totalSav=getTotalSavings();
   const bank=calcBank();
-  const total=bank+totalSav+cashBalance;
+  const total=bank+cashBalance;
   C('ob-lbl').textContent=bankAccounts.length?`🏦 ${bankAccounts.length} חשבונות + מזומן`:(bankAnchor!==null?`🏦 בנק: ₪${fmt(bank)}`:`פתיחה: ₪${fmt(ob)}`);
   C('bal-big').textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));
   C('bal-big').classList.toggle('neg',total<0);
+  const savSep=C('bal-sav-sep');
+  if(savSep){
+    if(totalSav>0){savSep.style.display='flex';C('bal-sav-val').textContent='₪'+fmt(totalSav);}
+    else savSep.style.display='none';
+  }
   const nb=C('nav-bal');nb.textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));nb.className=total<0?'neg':'pos';
   const mt=mTxs();
   C('m-inc').textContent='₪'+fmt(sumT(mt,'income'));
@@ -4234,7 +4243,7 @@ function renderBalance(){
     else fe.style.display='none';
   }
   C('m-inv').textContent='₪'+fmt(investBalance!=null?investBalance:sumT(txs,'invest')); // portfolio value or tx sum
-  C('m-sav').textContent='₪'+fmt(totalSav);
+  const msav=C('m-sav');if(msav)msav.textContent='₪'+fmt(totalSav);
   const cashEl=C('m-cash');if(cashEl)cashEl.textContent='₪'+fmt(cashBalance);
   const ms=new Set(txs.filter(t=>t.type==='expense').map(t=>{const d=new Date(t.date);return d.getMonth()+'-'+d.getFullYear();})).size||1;
   const avgExp=exp>0?exp/ms:sumT(mt,'expense')||500;
@@ -4829,7 +4838,7 @@ function renderPieCustom(svgId,legId,data){
 
 function getTotal(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
-  return calcBank()+getTotalSavings()+cashBalance;
+  return calcBank()+cashBalance;
 }
 
 // ════ NEW: CHANGE NAME ════
