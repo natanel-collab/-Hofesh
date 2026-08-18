@@ -1168,15 +1168,6 @@ select.mt-inp{appearance:none}
         </div>
         <div class="bal-lbl">יתרה פנויה</div>
         <div class="bal-big" id="bal-big" onclick="openOb()">₪0</div>
-        <div id="bal-sav-sep" style="display:none;align-items:center;justify-content:space-between;
-          margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--txt2);font-weight:600">
-            <div style="width:1.5rem;height:1.5rem;border-radius:.5rem;background:var(--blu-d);
-              display:flex;align-items:center;justify-content:center;font-size:.85rem">🎯</div>
-            חיסכון <span style="font-size:.6rem;color:var(--txt3)">(בנפרד)</span>
-          </div>
-          <div style="font-size:1rem;font-weight:800;color:var(--blu)" id="bal-sav-val">₪0</div>
-        </div>
         <div class="bal-row">
           <div class="bal-item">
             <div class="bal-item-lbl"><div class="bal-dot" style="background:var(--grn)"></div>הכנסות</div>
@@ -1200,6 +1191,18 @@ select.mt-inp{appearance:none}
             justify-content:space-between;cursor:pointer" onclick="openCashModal()">
             <div style="font-size:.62rem;color:var(--ylw)">💵 מזומן</div>
             <div style="font-size:.88rem;font-weight:700;color:var(--ylw)" id="m-cash">₪0</div>
+          </div>
+        </div>
+        <div id="bal-sav-sep" style="display:none;align-items:center;justify-content:space-between;
+          margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);position:relative;z-index:1">
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--txt);font-weight:700">
+            <div style="width:1.7rem;height:1.7rem;border-radius:.55rem;background:var(--blu-d);
+              display:flex;align-items:center;justify-content:center;font-size:.9rem">🎯</div>
+            חיסכון ליעדים
+          </div>
+          <div style="text-align:left">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--blu);line-height:1">₪<span id="bal-sav-val">0</span></div>
+            <div style="font-size:.52rem;color:var(--txt3);margin-top:.1rem">שמור בנפרד</div>
           </div>
         </div>
       </div>
@@ -4227,7 +4230,7 @@ function renderBalance(){
   C('bal-big').classList.toggle('neg',total<0);
   const savSep=C('bal-sav-sep');
   if(savSep){
-    if(totalSav>0){savSep.style.display='flex';C('bal-sav-val').textContent='₪'+fmt(totalSav);}
+    if(totalSav>0){savSep.style.display='flex';C('bal-sav-val').textContent=fmt(totalSav);}
     else savSep.style.display='none';
   }
   const nb=C('nav-bal');nb.textContent=(total<0?'-':'')+'₪'+fmt(Math.abs(total));nb.className=total<0?'neg':'pos';
