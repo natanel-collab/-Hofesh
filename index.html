@@ -275,10 +275,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:.18rem;
   padding:.25rem 0;background:none;border:none;cursor:pointer;font-family:inherit;
   -webkit-tap-highlight-color:transparent;transition:all .15s}
-.tab-btn .ti{font-size:1.25rem;line-height:1;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
-.tab-btn .tl{font-size:.58rem;font-weight:500;color:var(--txt3);transition:color .15s}
+.tab-btn .ti{line-height:1;height:1.5rem;display:flex;align-items:center;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.tab-btn .ti-svg{width:1.5rem;height:1.5rem}
+.tab-btn .ti-s{fill:none;stroke:#9d8fb5;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.tab-btn .ti-f{fill:none;stroke:#9d8fb5;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:all .2s}
+.tab-btn.on .ti-s{stroke:var(--acc)}
+.tab-btn.on .ti-f{fill:var(--acc);stroke:var(--acc)}
+.tab-btn .tl{font-size:.58rem;font-weight:500;color:#9d8fb5;transition:color .15s}
 .tab-btn.on .tl{color:var(--acc)}
-.tab-btn.on .ti{transform:scale(1.15)}
+.tab-btn.on .ti{transform:scale(1.12) translateY(-1px)}
 
 /* ══ VIEWS ══ */
 .view{display:none;animation:fadeSlide .25s ease both}
@@ -1436,12 +1441,12 @@ select.mt-inp{appearance:none}
   <button id="fab" onclick="openAdd()">＋</button>
 
   <div id="tabbar">
-    <button class="tab-btn on" id="tb-home" onclick="goTab('home')"><span class="ti">🏠</span><span class="tl">ראשי</span></button>
-    <button class="tab-btn" id="tb-stats" onclick="goTab('stats')"><span class="ti">📊</span><span class="tl">סטטיסטיקה</span></button>
-    <button class="tab-btn" id="tb-history" onclick="goTab('history')"><span class="ti">📋</span><span class="tl">עסקאות</span></button>
-    <button class="tab-btn" id="tb-date" onclick="goTab('date')"><span class="ti">💜</span><span class="tl">מפגש</span><span id="tb-date-dot"></span></button>
-    <button class="tab-btn" id="tb-invest" onclick="goTab('invest')"><span class="ti">📈</span><span class="tl">השקעות</span></button>
-    <button class="tab-btn" id="tb-goals" onclick="goTab('goals')"><span class="ti">🎯</span><span class="tl">יעדים</span></button>
+    <button class="tab-btn on" id="tb-home" onclick="goTab('home')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><path class="ti-s" d="M4 11.5l8-6.5 8 6.5"/><path class="ti-f" d="M6 10.5V19h12v-8.5l-6-5z"/></svg></span><span class="tl">ראשי</span></button>
+    <button class="tab-btn" id="tb-stats" onclick="goTab('stats')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><rect class="ti-f" x="4" y="13" width="3.4" height="6" rx="1"/><rect class="ti-f" x="10.3" y="8" width="3.4" height="11" rx="1"/><rect class="ti-f" x="16.6" y="4" width="3.4" height="15" rx="1"/></svg></span><span class="tl">סטטיסטיקה</span></button>
+    <button class="tab-btn" id="tb-history" onclick="goTab('history')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><path class="ti-s" d="M9 7h11M9 12h11M9 17h11"/><circle class="ti-f" cx="4.5" cy="7" r="1.5"/><circle class="ti-f" cx="4.5" cy="12" r="1.5"/><circle class="ti-f" cx="4.5" cy="17" r="1.5"/></svg></span><span class="tl">עסקאות</span></button>
+    <button class="tab-btn" id="tb-date" onclick="goTab('date')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><path class="ti-f" d="M12 20s-6.5-4.3-6.5-9A3.2 3.2 0 0112 7.2 3.2 3.2 0 0118.5 11c0 4.7-6.5 9-6.5 9z"/></svg></span><span class="tl">מפגש</span><span id="tb-date-dot"></span></button>
+    <button class="tab-btn" id="tb-invest" onclick="goTab('invest')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><path class="ti-s" d="M4 16l5-5 3.5 3.5L20 7"/><path class="ti-f" d="M15 7h5v5z"/></svg></span><span class="tl">השקעות</span></button>
+    <button class="tab-btn" id="tb-goals" onclick="goTab('goals')"><span class="ti"><svg class="ti-svg" viewBox="0 0 24 24"><circle class="ti-s" cx="12" cy="12" r="8"/><circle class="ti-s" cx="12" cy="12" r="4.5"/><circle class="ti-f" cx="12" cy="12" r="1.8"/></svg></span><span class="tl">יעדים</span></button>
   </div>
 
   <div id="toast"></div>
