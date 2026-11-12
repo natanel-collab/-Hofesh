@@ -1560,7 +1560,7 @@ select.mt-inp{appearance:none}
         <option value="בידור">🎬 בידור</option><option value="קניות">🛍️ קניות</option>
         <option value="בריאות">💊 בריאות</option><option value="שכירות">🏠 שכירות</option>
         <option value="חשמל/מים">💡 חשמל/מים</option><option value="השקעות">📈 השקעות</option>
-        <option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
+        <option value="חשבונות">🧾 חשבונות</option><option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
       </select></div>
     <div class="npad">
       <button class="nkey" onclick="nk('7')">7</button><button class="nkey" onclick="nk('8')">8</button><button class="nkey" onclick="nk('9')">9</button>
@@ -1593,7 +1593,7 @@ select.mt-inp{appearance:none}
         <option value="בידור">🎬 בידור</option><option value="קניות">🛍️ קניות</option>
         <option value="בריאות">💊 בריאות</option><option value="שכירות">🏠 שכירות</option>
         <option value="חשמל/מים">💡 חשמל/מים</option><option value="השקעות">📈 השקעות</option>
-        <option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
+        <option value="חשבונות">🧾 חשבונות</option><option value="משכורת">💼 משכורת</option><option value="אחר">✦ אחר</option>
       </select></div>
     <div style="display:flex;gap:.5rem;margin-top:.35rem">
       <button onclick="saveEdit()" style="flex:1;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.9rem;font-weight:700;border:none;cursor:pointer">שמור</button>
@@ -1951,6 +1951,7 @@ const CATS={
   מזון:{i:'🍔',c:'#ff9f0a'},תחבורה:{i:'🚗',c:'#0a84ff'},בידור:{i:'🎬',c:'#bf5af2'},
   קניות:{i:'🛍️',c:'#ff453a'},בריאות:{i:'💊',c:'#30d158'},שכירות:{i:'🏠',c:'#64d2ff'},
   'חשמל/מים':{i:'💡',c:'#ffd60a'},השקעות:{i:'📈',c:'#5e5ce6'},
+  חשבונות:{i:'🧾',c:'#30b0c7'},
   משכורת:{i:'💼',c:'#30d158'},אחר:{i:'✦',c:'#86868b'}
 };
 const MHE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -1959,6 +1960,7 @@ const DEFAULT_CATS={
   מזון:{i:'🍔',c:'#ff9f0a'},תחבורה:{i:'🚗',c:'#0a84ff'},בידור:{i:'🎬',c:'#bf5af2'},
   קניות:{i:'🛍️',c:'#ff453a'},בריאות:{i:'💊',c:'#30d158'},שכירות:{i:'🏠',c:'#64d2ff'},
   'חשמל/מים':{i:'💡',c:'#ffd60a'},השקעות:{i:'📈',c:'#5e5ce6'},
+  חשבונות:{i:'🧾',c:'#30b0c7'},
   משכורת:{i:'💼',c:'#30d158'},אחר:{i:'✦',c:'#86868b'}
 };
 
@@ -2844,7 +2846,7 @@ async function payBill(id){
   const today=new Date().toISOString().split('T')[0];
   const txRow={
     family_id:profile.family_id,user_id:user.id,user_name:profile.name||user.email,
-    type:'expense',amount:b.amount,description:b.name,category:'אחר',
+    type:'expense',amount:b.amount,description:b.name,category:'חשבונות',
     date:new Date(today+'T12:00:00').toISOString(),from_balance:false
   };
   const {data:newTx,error}=await sb.from('transactions').insert(txRow).select().single();
@@ -4539,7 +4541,7 @@ function renderBudget(){
   const mt=mTxs(),tots={};
   mt.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+t.amount;});
   // Include default + custom cats (exclude income-only)
-  const cats=[...Object.keys(DEFAULT_CATS).filter(c=>c!=='משכורת'&&c!=='השקעות'),
+  const cats=[...Object.keys(DEFAULT_CATS).filter(c=>c!=='משכורת'&&c!=='השקעות'&&c!=='חשבונות'),
               ...Object.keys(customCats)];
   C('bud-list').innerHTML=cats.map(cat=>{
     const c=getAllCats()[cat]||{i:'📌',c:'#86868b'},spent=tots[cat]||0;
@@ -4588,6 +4590,16 @@ function buildBudgetTotal(cats,tots){
       <span style="color:${remaining>=0?'var(--grn)':'var(--red)'};font-weight:700">${remaining>=0?'נשארו ₪'+fmt(remaining):'חריגה של ₪'+fmt(Math.abs(remaining))}</span>
     </div>
     ${paceLine}
+    ${buildBillsBudgetLine()}
+  </div>`;
+}
+
+function buildBillsBudgetLine(){
+  const paid=mTxs().filter(t=>t.type==='expense'&&t.category==='חשבונות').reduce((s,t)=>s+t.amount,0);
+  if(paid<=0)return '';
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.55rem;padding:.6rem .7rem;background:rgba(48,176,199,0.1);border:1px solid rgba(48,176,199,0.28);border-radius:12px">
+    <div style="display:flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:700;color:#8ad4f0">🧾 חשבונות קבועים</div>
+    <div style="text-align:left"><div style="font-size:.8rem;font-weight:800;color:#8ad4f0">₪${fmt(paid)}</div><div style="font-size:.5rem;color:#6b9ab0">קבוע · לא בתקציב</div></div>
   </div>`;
 }
 
