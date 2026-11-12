@@ -804,6 +804,30 @@ select.mt-inp{appearance:none}
 .mt-qb:active{transform:scale(.97)}
 .mt-qb.sel{background:var(--acc-d);border-color:var(--acc-b)}
 .mt-qb small{color:var(--txt2);font-weight:500}
+
+/* ══ RECURRING BILLS ══ */
+.bsum-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:.5rem;text-align:center}
+.bsum-n{font-size:.95rem;font-weight:900;line-height:1}
+.bsum-l{font-size:.52rem;color:var(--txt2);margin-top:.15rem}
+.bill-row{display:flex;align-items:center;gap:.65rem;padding:.6rem .1rem;border-bottom:1px solid var(--border)}
+.bill-row:last-child{border-bottom:none}
+.bill-row.paid{opacity:.5}
+.bill-ic{width:2.1rem;height:2.1rem;border-radius:.65rem;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;background:var(--surface);cursor:pointer}
+.bill-info{flex:1;min-width:0;cursor:pointer}
+.bill-name{font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:.35rem}
+.bill-meta{font-size:.58rem;color:var(--txt2);margin-top:.12rem}
+.bill-right{display:flex;flex-direction:column;align-items:flex-end;gap:.22rem;flex-shrink:0}
+.bill-amt{font-size:.78rem;font-weight:800}
+.bill-pay{font-size:.6rem;font-weight:800;padding:.25rem .65rem;border-radius:99px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;font-family:inherit;cursor:pointer}
+.bill-paid{font-size:.56rem;font-weight:700;color:var(--grn)}
+.bill-paid b{color:var(--blu);cursor:pointer;margin-right:.15rem;font-weight:800}
+.bdot{width:.4rem;height:.4rem;border-radius:99px;flex-shrink:0}
+.bdot.due{background:var(--red);box-shadow:0 0 0 3px rgba(255,69,58,.18)}
+.bdot.soon{background:var(--ylw);box-shadow:0 0 0 3px rgba(255,159,10,.15)}
+.bill-icp{width:2.3rem;height:2.3rem;border-radius:.65rem;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer}
+.bill-icp.on{background:var(--acc-d);border-color:var(--acc-b)}
+.bill-fchip{border:1px solid var(--border2);background:var(--surface);color:var(--txt);border-radius:10px;padding:.45rem .7rem;font-size:.72rem;font-weight:600;font-family:inherit;cursor:pointer}
+.bill-fchip.on{background:var(--acc-d);border-color:var(--acc-b);color:var(--txt)}
 </style>
 <script>
 // Minimal Supabase Client v3 - explicit Promise pattern (no thenable)
@@ -1235,12 +1259,16 @@ select.mt-inp{appearance:none}
         <div id="acc-list"></div>
       </div>
 
-      <div class="card glass" id="inv-card" style="display:none">
+      <div class="card glass" id="bills-card">
         <div class="card-head" style="display:flex;justify-content:space-between;align-items:center">
-          <span>📈 השקעות</span>
-          <span id="inv-total" style="font-size:.85rem;color:var(--grn);font-weight:700">סה"כ: ₪0</span>
+          <span>🧾 חשבונות קבועים</span>
+          <button onclick="openBillAdd()" style="background:none;border:none;color:var(--blu);font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer">➕ הוספה</button>
         </div>
-        <div id="inv-breakdown" style="display:flex;flex-direction:column;gap:.5rem"></div>
+        <div id="bills-sum" style="display:flex;gap:.4rem;margin:.65rem 0 .55rem"></div>
+        <div id="bills-list"></div>
+        <div class="empty" id="bills-empty" style="display:none;padding:1rem 0">
+          <div class="empty-ico">🧾</div><div class="empty-txt">אין עדיין חשבונות<br>לחצו "הוספה" כדי להתחיל</div>
+        </div>
       </div>
 
       <div class="card glass" id="home-goals-card">
@@ -1253,15 +1281,6 @@ select.mt-inp{appearance:none}
           </div>
         </div>
         <div id="home-goals-list"></div>
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-        <div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3)">עסקאות אחרונות</div>
-        <div style="font-size:.7rem;color:var(--blu);cursor:pointer" onclick="goTab('history')">הכל ›</div>
-      </div>
-      <div class="tx-list" id="home-txs"></div>
-      <div class="empty" id="home-empty" style="display:none">
-        <div class="empty-ico">🌿</div><div class="empty-txt">אין עסקאות החודש<br>לחץ + להוספה</div>
       </div>
 
     </div></div>
@@ -1862,6 +1881,25 @@ select.mt-inp{appearance:none}
     <button onclick="C('ov-del-account').classList.remove('on')" style="width:100%;margin-top:.4rem;padding:.7rem;border-radius:var(--rs);background:var(--surface);border:1px solid var(--border2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
   </div></div>
 
+
+  <!-- BILL ADD/EDIT SHEET -->
+  <div class="ov" id="ov-bill" onclick="if(event.target===this)C('ov-bill').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title" id="bill-sh-title">חשבון קבוע חדש</div>
+    <div class="field"><span class="fi">📝</span><input type="text" id="bill-name" placeholder="שם החשבון (לדוגמה: ארנונה)" maxlength="30"></div>
+    <div style="font-size:.68rem;color:var(--txt3);margin:.2rem .2rem .4rem">אייקון</div>
+    <div id="bill-icons" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem"></div>
+    <div style="font-size:.68rem;color:var(--txt3);margin:0 .2rem .4rem">כל כמה זמן</div>
+    <div id="bill-freqs" style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.7rem"></div>
+    <div class="field"><span class="fi">₪</span><input type="number" id="bill-amt" min="0" step="1" inputmode="numeric" placeholder="סכום בערך"></div>
+    <div style="font-size:.68rem;color:var(--txt3);margin:0 .2rem .4rem">תאריך התשלום הבא</div>
+    <div class="field"><span class="fi">📅</span><input type="date" id="bill-date"></div>
+    <button onclick="saveBill()" style="width:100%;padding:.85rem;border-radius:var(--rs);background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-family:inherit;font-size:.92rem;font-weight:800;border:none;cursor:pointer;margin-top:.5rem">שמירה</button>
+    <button id="bill-del-btn" onclick="deleteBill()" style="display:none;width:100%;padding:.75rem;border-radius:var(--rs);background:var(--red-d);border:1px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:.5rem">🗑 ביטול החשבון הקבוע</button>
+    <div id="bill-del-note" style="display:none;font-size:.6rem;color:var(--txt3);text-align:center;margin-top:.4rem;line-height:1.5">ההוצאות שכבר שולמו יישארו בהיסטוריה</div>
+  </div></div>
+
 </div><!-- /app -->
 
 <script>
@@ -1940,6 +1978,7 @@ let budEdit=false, period='month', hf='all', catEdit=false;
 let aSource='balance';
 let bankAnchor=null, bankAnchorAt=null;
 let bankAccounts=[];
+let bills=[], billEditId=null, billIcon='🏛️', billFreq='monthly';
 let aAccount=localStorage.getItem('hofesh-last-acc')||null;
 let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 let investBalance=localStorage.getItem('hofesh-invest')!==null&&localStorage.getItem('hofesh-invest')!==''?parseFloat(localStorage.getItem('hofesh-invest')):null;
@@ -2527,13 +2566,14 @@ async function loadUserData(){
   family=fam;
 
   // load all data in parallel
-  const [txRes,budRes,goalRes,settRes,reactRes,accRes]=await Promise.all([
+  const [txRes,budRes,goalRes,settRes,reactRes,accRes,billRes]=await Promise.all([
     sb.from('transactions').select('*').eq('family_id',profile.family_id).order('date',{ascending:false}),
     sb.from('budgets').select('*').eq('family_id',profile.family_id),
     sb.from('goals').select('*').eq('family_id',profile.family_id),
     sb.from('family_settings').select('*').eq('family_id',profile.family_id).single(),
     sb.from('tx_reactions').select('*').eq('family_id',profile.family_id),
-    sb.from('bank_accounts').select('*').eq('family_id',profile.family_id)
+    sb.from('bank_accounts').select('*').eq('family_id',profile.family_id),
+    sb.from('recurring_bills').select('*').eq('family_id',profile.family_id)
   ]);
 
   txs=(txRes.data||[]).map(t=>({...t,amount:parseFloat(t.amount)}));
@@ -2545,6 +2585,7 @@ async function loadUserData(){
   budRows=(budRes.data||[]);
   rebuildBuds();
   goals=(goalRes.data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
+  bills=(billRes?.data||[]).map(b=>({...b,amount:parseFloat(b.amount||0)}));
   familySettings=settRes.data;
   ob=parseFloat(familySettings?.opening_balance||0);
   // Load cash from Supabase (overrides localStorage)
@@ -2673,6 +2714,166 @@ async function loadUserData(){
 }
 
 // ════ REALTIME SYNC ════
+// ════ RECURRING BILLS ════
+const BILL_ICONS=['🏛️','⚡','💧','🔥','🌐','🏢','📱','📺','🚗','🏠','💳','📄'];
+
+function billInterval(f){return f==='bimonthly'?2:f==='quarterly'?3:f==='yearly'?12:1;}
+function billFreqLabel(f){return f==='bimonthly'?'דו-חודשי':f==='quarterly'?'רבעוני':f==='yearly'?'שנתי':'חודשי';}
+function billAddMonths(dateStr,n){
+  const d=new Date((dateStr||new Date().toISOString().split('T')[0])+'T12:00:00');
+  d.setMonth(d.getMonth()+n);
+  return d.toISOString().split('T')[0];
+}
+function billDateHe(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  return d.getDate()+' ב'+MHE[d.getMonth()];
+}
+function billStatus(b){
+  const today=new Date().toISOString().split('T')[0];
+  const next=(b.next_date||'').substring(0,10);
+  if(!next)return {kind:'',text:''};
+  const paid=b.last_paid && today<next;
+  if(paid)return {kind:'paid',text:'הבא: '+billDateHe(next)};
+  const dNext=new Date(next+'T12:00:00'), dToday=new Date(today+'T12:00:00');
+  const days=Math.round((dNext-dToday)/86400000);
+  if(days<0)return {kind:'due',text:'הגיע · '+billDateHe(next)};
+  if(days===0)return {kind:'due',text:'היום'};
+  if(days<=5)return {kind:'soon',text:'בעוד '+days+' ימים'};
+  return {kind:'',text:billDateHe(next)};
+}
+
+function renderBills(){
+  const card=C('bills-card');if(!card)return;
+  const list=C('bills-list'),sum=C('bills-sum'),empty=C('bills-empty');
+  if(!bills.length){if(list)list.innerHTML='';if(sum)sum.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  const order={due:0,soon:1,'':2,paid:3};
+  const rows=bills.map(b=>({b,st:billStatus(b)}));
+  rows.sort((a,b)=>order[a.st.kind]-order[b.st.kind]);
+  let waiting=0,paidCount=0,monthly=0;
+  rows.forEach(({b,st})=>{
+    if(st.kind==='paid')paidCount++;else waiting++;
+    monthly+=b.amount/billInterval(b.frequency);
+  });
+  if(sum)sum.innerHTML=
+    '<div class="bsum-box"><div class="bsum-n" style="color:var(--red)">'+waiting+'</div><div class="bsum-l">ממתינים</div></div>'+
+    '<div class="bsum-box"><div class="bsum-n" style="color:var(--grn)">'+paidCount+'</div><div class="bsum-l">שולמו</div></div>'+
+    '<div class="bsum-box"><div class="bsum-n">₪'+fmt(Math.round(monthly))+'</div><div class="bsum-l">לחודש</div></div>';
+  if(list)list.innerHTML=rows.map(({b,st})=>{
+    const dot=st.kind==='due'?'<span class="bdot due"></span>':st.kind==='soon'?'<span class="bdot soon"></span>':'';
+    const right=st.kind==='paid'
+      ? '<span class="bill-paid">✓ שולם <b onclick="undoBill(\''+b.id+'\')">· בטל</b></span>'
+      : '<button class="bill-pay" onclick="payBill(\''+b.id+'\')">שילמתי</button>';
+    return '<div class="bill-row'+(st.kind==='paid'?' paid':'')+'">'+
+      '<div class="bill-ic" onclick="openBillEdit(\''+b.id+'\')">'+(b.icon||'🧾')+'</div>'+
+      '<div class="bill-info" onclick="openBillEdit(\''+b.id+'\')"><div class="bill-name">'+dot+esc(b.name)+'</div>'+
+      '<div class="bill-meta">'+billFreqLabel(b.frequency)+' · '+st.text+'</div></div>'+
+      '<div class="bill-right"><div class="bill-amt">₪'+fmt(b.amount)+'</div>'+right+'</div></div>';
+  }).join('');
+}
+
+function renderBillPickers(){
+  if(C('bill-icons'))C('bill-icons').innerHTML=BILL_ICONS.map(ic=>'<div class="bill-icp'+(ic===billIcon?' on':'')+'" onclick="pickBillIcon(\''+ic+'\')">'+ic+'</div>').join('');
+  const freqs=[['monthly','חודשי'],['bimonthly','דו-חודשי'],['quarterly','רבעוני'],['yearly','שנתי']];
+  if(C('bill-freqs'))C('bill-freqs').innerHTML=freqs.map(fl=>'<div class="bill-fchip'+(fl[0]===billFreq?' on':'')+'" onclick="pickBillFreq(\''+fl[0]+'\')">'+fl[1]+'</div>').join('');
+}
+function pickBillIcon(ic){billIcon=ic;renderBillPickers();}
+function pickBillFreq(f){billFreq=f;renderBillPickers();}
+
+function openBillAdd(){
+  billEditId=null;billIcon='🏛️';billFreq='monthly';
+  C('bill-sh-title').textContent='חשבון קבוע חדש';
+  C('bill-name').value='';C('bill-amt').value='';
+  C('bill-date').value=new Date().toISOString().split('T')[0];
+  C('bill-del-btn').style.display='none';
+  C('bill-del-note').style.display='none';
+  renderBillPickers();
+  C('ov-bill').classList.add('on');
+}
+function openBillEdit(id){
+  const b=bills.find(x=>String(x.id)===String(id));if(!b)return;
+  billEditId=id;billIcon=b.icon||'🏛️';billFreq=b.frequency||'monthly';
+  C('bill-sh-title').textContent='עריכת '+b.name;
+  C('bill-name').value=b.name;
+  C('bill-amt').value=b.amount;
+  C('bill-date').value=(b.next_date||'').substring(0,10);
+  C('bill-del-btn').style.display='block';
+  C('bill-del-note').style.display='block';
+  renderBillPickers();
+  C('ov-bill').classList.add('on');
+}
+
+async function saveBill(){
+  const name=C('bill-name').value.trim();
+  const amt=parseFloat(C('bill-amt').value||'0');
+  const date=C('bill-date').value;
+  if(!name){toast('הכנס שם חשבון');return;}
+  if(!amt||amt<=0){toast('הכנס סכום תקין');return;}
+  if(!date){toast('בחר תאריך');return;}
+  if(billEditId){
+    const row={name,icon:billIcon,frequency:billFreq,amount:amt,next_date:date};
+    const {error}=await sb.from('recurring_bills').update(row).eq('id',billEditId);
+    if(error){toast('שגיאה: '+error.message);return;}
+    const i=bills.findIndex(x=>String(x.id)===String(billEditId));
+    if(i>-1)bills[i]={...bills[i],...row};
+  }else{
+    const row={family_id:profile.family_id,name,icon:billIcon,frequency:billFreq,amount:amt,next_date:date};
+    const {data,error}=await sb.from('recurring_bills').insert(row).select().single();
+    if(error){toast('שגיאה: '+error.message);return;}
+    if(data&&data.id)bills.unshift({...data,amount:parseFloat(data.amount||0)});
+    else{const r=await sb.from('recurring_bills').select('*').eq('family_id',profile.family_id);bills=(r.data||[]).map(b=>({...b,amount:parseFloat(b.amount||0)}));}
+  }
+  C('ov-bill').classList.remove('on');
+  render();
+  toast('נשמר ✓');
+}
+
+async function deleteBill(){
+  if(!billEditId)return;
+  const id=billEditId;
+  const {error}=await sb.from('recurring_bills').delete().eq('id',id);
+  if(error){toast('שגיאה: '+error.message);return;}
+  bills=bills.filter(x=>String(x.id)!==String(id));
+  C('ov-bill').classList.remove('on');
+  render();
+  toast('החשבון בוטל ✓');
+}
+
+async function payBill(id){
+  const b=bills.find(x=>String(x.id)===String(id));if(!b)return;
+  const today=new Date().toISOString().split('T')[0];
+  const txRow={
+    family_id:profile.family_id,user_id:user.id,user_name:profile.name||user.email,
+    type:'expense',amount:b.amount,description:b.name,category:'אחר',
+    date:new Date(today+'T12:00:00').toISOString(),from_balance:false
+  };
+  const {data:newTx,error}=await sb.from('transactions').insert(txRow).select().single();
+  if(error){toast('שגיאה: '+error.message);return;}
+  txs.unshift({...newTx,amount:parseFloat(newTx.amount)});
+  const nextDate=billAddMonths((b.next_date||today).substring(0,10),billInterval(b.frequency));
+  const upd={last_paid:today,last_tx:newTx.id,next_date:nextDate};
+  await sb.from('recurring_bills').update(upd).eq('id',id);
+  const i=bills.findIndex(x=>String(x.id)===String(id));
+  if(i>-1)bills[i]={...bills[i],...upd};
+  render();
+  toast('✓ '+b.name+' נכנס להוצאות');
+}
+
+async function undoBill(id){
+  const b=bills.find(x=>String(x.id)===String(id));if(!b)return;
+  if(b.last_tx){
+    await sb.from('transactions').delete().eq('id',b.last_tx);
+    txs=txs.filter(t=>String(t.id)!==String(b.last_tx));
+  }
+  const revert=billAddMonths((b.next_date||'').substring(0,10),-billInterval(b.frequency));
+  const upd={last_paid:null,last_tx:null,next_date:revert};
+  await sb.from('recurring_bills').update(upd).eq('id',id);
+  const i=bills.findIndex(x=>String(x.id)===String(id));
+  if(i>-1)bills[i]={...bills[i],...upd};
+  render();
+  toast('↩ התשלום בוטל');
+}
+
 function subscribeRealtime(){
   sb.channel('family-'+profile.family_id)
     .on('postgres_changes',
@@ -2709,6 +2910,13 @@ function subscribeRealtime(){
       async()=>{
         const {data}=await sb.from('goals').select('*').eq('family_id',profile.family_id);
         goals=(data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
+        render();
+      })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'recurring_bills',filter:`family_id=eq.${profile.family_id}`},
+      async()=>{
+        const {data}=await sb.from('recurring_bills').select('*').eq('family_id',profile.family_id);
+        bills=(data||[]).map(b=>({...b,amount:parseFloat(b.amount||0)}));
         render();
       })
     .on('postgres_changes',
@@ -4620,7 +4828,7 @@ function renderGoals(){
 function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
   renderBalance();renderHomeGoals();renderWeekBars();
-  renderInvPortfolio();renderBudget();renderHomeTxs();renderMeetTab();
+  renderBudget();renderBills();renderMeetTab();
   renderStats();renderHistory();renderGoals();
   if(C('v-invest')&&C('v-invest').classList.contains('on'))renderInvestTab();
   // Update USD rate displays
